@@ -1,0 +1,4 @@
+{
+    "heading": "Welcome to YourProject",
+    "body": "This card is driven by /data/card.json. Edit the JSON file directly, or run ./setup.sh to fill in your project details."
+}

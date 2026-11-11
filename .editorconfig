@@ -1,0 +1,65 @@
+# EditorConfig - https://editorconfig.org
+# Keeps whitespace and line endings consistent across editors.
+# Matches the conventions used throughout the Pixelian template
+# (4-space indent for JS/CSS/PHP/JSON, LF line endings).
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# Markdown: trailing whitespace is meaningful (two spaces = line break)
+[*.md]
+trim_trailing_whitespace = false
+indent_size = 4
+
+[*.markdown]
+trim_trailing_whitespace = false
+indent_size = 4
+
+# JSON: always 4 spaces, no exceptions
+[*.json]
+indent_size = 4
+
+# YAML: 2 spaces is the ecosystem standard
+[*.{yml,yaml}]
+indent_size = 2
+
+# Nginx configs: 4 spaces
+[*.conf]
+indent_size = 4
+
+# Shell scripts: 4 spaces
+[*.sh]
+indent_size = 4
+
+# Makefiles: tabs are required
+[Makefile]
+indent_style = tab
+
+# PHP / HTML / CSS / JS: explicit 4-space declarations so the default
+# is visible to anyone editing the .editorconfig (relies on [*] above,
+# but explicit is better than inferred)
+[*.php]
+indent_size = 4
+
+[*.html]
+indent_size = 4
+
+[*.css]
+indent_size = 4
+
+[*.js]
+indent_size = 4
+
+[*.mjs]
+indent_size = 4
+
+# Manifest and config files use JSON syntax - keep them at 4
+[*.webmanifest]
+indent_size = 4

@@ -1,0 +1,9 @@
+{
+    "title": "YourProject",
+    "tagline": "YourTagline",
+    "showBrand": true,
+    "showTagline": true,
+    "copyright": "&copy; {year} YourCopyright",
+    "poweredBy": "Powered by <a href=\"https://antranik.dev\" target=\"_blank\" rel=\"noopener\">Antranik.dev</a>",
+    "showPoweredBy": true
+}

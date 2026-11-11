@@ -1,0 +1,12 @@
+# robots.txt for Pixelian projects.
+# Default: block all crawlers. Change to "Allow: /" when the site goes live.
+
+User-agent: *
+Disallow: /
+
+# Uncomment the block below at launch and remove the block above.
+# User-agent: *
+# Allow: /
+# Disallow: /api/
+# Disallow: /data/
+# Sitemap: https://YourDomain/sitemap.xml

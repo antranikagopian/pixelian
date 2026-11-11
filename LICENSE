@@ -1,0 +1,177 @@
+Antranik License 1.0
+
+Copyright (c) 2026 Antranik Agopian <hello@antranik.dev>
+
+SPDX-License-Identifier: LicenseRef-Antranik-1.0
+
+
+PREAMBLE
+
+This license governs the use, modification, and distribution of
+Pixelian (the "Software"). It is designed to be permissive for
+building applications on top of the Software, while requiring
+attribution to the original author and preservation of the
+Software's name.
+
+This license is not a template for your own projects. It governs the
+Software, not derivative applications built with it. Applications you
+build with the Software may be licensed however you choose.
+
+
+1. PERMISSION
+
+You are granted a worldwide, royalty-free, non-exclusive, perpetual
+license to:
+
+  a. Use the Software for any purpose, including commercial purposes.
+  b. Copy and distribute the Software, in source or compiled form.
+  c. Modify the Software and create derivative works.
+  d. Sublicense the Software as part of a larger application you build.
+
+All permissions in this section are conditioned on your compliance
+with sections 2, 4, 5, and 6 of this license.
+
+
+2. ATTRIBUTION
+
+When you use, modify, or distribute the Software, you must:
+
+  a. Retain the copyright notice at the top of this LICENSE file in
+     all copies of the Software. Each source file also carries a
+     "@copyright" line (naming Antranik Agopian and Antranik License
+     1.0) and an "@author" line (naming the file's author). Retain
+     both lines in any file you redistribute without modification
+     to that file.
+  b. Retain this LICENSE file (or a copy of its text) alongside any
+     distribution of the Software.
+  c. In every file you modify, keep the original "@copyright" and
+     "@author" lines in the file header unchanged, and add a
+     "@modified-by" line identifying you as the author of the
+     modification. See GUIDE.md section 3.3 for the exact format.
+  d. Display a clear attribution to Antranik.dev in the footer or
+     About screen of any application you ship that incorporates a
+     substantial portion of the Software. The required form depends
+     on whether you have modified the Software's code:
+
+     UNMODIFIED CODE
+
+     If no shipped code file ("*.js", "*.css", "index.php") contains a
+     "@modified-by" line, the footer or About screen must display
+     "Powered by Antranik.dev". The default line shipped in
+     data/site.json satisfies this requirement.
+
+     The following do NOT count as modification and keep you in the
+     unmodified tier:
+
+       - Configuration edits (data/*.json, robots.txt, sitemap.xml,
+         site.webmanifest)
+       - Placeholder substitution performed by setup.sh
+       - Adding new files (custom modules under js/modules/, new CSS
+         files, new data files) that do not edit any shipped file
+
+     MODIFIED CODE
+
+     If any shipped code file ("*.js", "*.css", "index.php") contains
+     a "@modified-by" line, the footer or About screen must display
+     "Extends Antranik.dev" or an equivalent phrase that clearly
+     identifies Antranik.dev as the source of the extended work. The
+     test is whether a shipped code file carries a "@modified-by"
+     line, not the size of the change - editing one line in a shipped
+     stylesheet triggers this tier.
+
+     In both cases, removing or obscuring the required attribution
+     without an equivalent replacement is a violation of this
+     license.
+
+Attribution must credit Antranik.dev as the source.
+
+
+3. APPLICATIONS BUILT WITH THE SOFTWARE
+
+Applications you build with the Software are not subject to this
+license. You may license your application however you choose. The
+attribution requirement in section 2 applies to the application's
+runtime UI (footer or About screen), not to the application's own
+source code or to any license file you ship with it.
+
+
+4. NAME PRESERVATION
+
+You must not rename the Software. Forks and derivative works of the
+Software must continue to be identified as "Pixelian" and must not be
+presented to users under a different name. This requirement applies
+to the Software itself, not to applications you build with the
+Software. Applications you build with the Software may use any name
+you choose.
+
+
+5. TRADEMARK
+
+The names "Antranik", "Antranik Agopian", "Antranik.dev", and
+"Antranik.am" identify the copyright holder and author of the
+Software. The name "Pixelian" identify the Software itself. You may 
+not use any of these names or their associated logos as the primary 
+brand of any product you sell or distribute without written 
+permission from the copyright holder.
+
+The attribution requirement in section 2 is not a trademark license.
+It ensures credit for the Software's author remains visible when the
+Software is used. It does not grant any right to use the trademarks
+in connection with products you build with the Software, beyond
+displaying the attribution described in section 2.d.
+
+
+6. CONDITIONS AND CURE
+
+The permissions in section 1 are granted only if you comply with all
+terms of this license. If you fail to comply, your license to the
+Software terminates automatically.
+
+If you become aware of a breach, you may regain the license by curing
+the breach within 30 days. Curing means taking concrete steps to
+address the specific non-compliance, such as restoring a removed
+attribution, renaming a fork back to "Pixelian", removing a trademark
+from a product brand, or switching the footer from "Powered by" to
+"Extends" after a code modification. Repeated breaches, or breaches
+committed in bad faith after the cure period has been used once, are
+not eligible for a second cure.
+
+
+7. NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+8. THIRD-PARTY COMPONENTS
+
+The Software loads Font Awesome 6.5.0 (Free) via CDN. Font Awesome is
+licensed separately under SIL OFL 1.1, MIT, and CC BY 4.0, and is not
+covered by this license. See GUIDE.md section 11 for details.
+
+
+9. DEFINITIONS
+
+"Software" means the source code, stylesheets, data files, and
+documentation distributed by Antranik Agopian under the Pixelian 
+name.
+
+"Application" means any software product built using the Software,
+including websites and web applications that incorporate the
+Software's modules or core primitives.
+
+"Modify" means to add to, remove from, or change the contents of any
+file that ships with the Software. Adding new files without editing
+shipped files is not modification.
+
+"Fork" means a copy of the Software distributed under a new repository
+or a modified version distributed under the same name.
+
+
+END OF TERMS

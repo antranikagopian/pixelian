@@ -1,0 +1,16 @@
+/**
+ * Card-specific content overrides on top of the default
+ * .core-panel-content styles. The window frame (bg, border, shadow,
+ * radius) comes from panel.css.
+ *
+ * Card is rendered through core/panel.js with showHeader: false, so it
+ * is a headerless panel. If card-specific tweaks are needed, add them
+ * here using a scoped selector like:
+ *
+ *     .core-panel-no-header .core-panel-content h2 { ... }
+ *
+ * Empty by default - card looks identical to a headerless core panel.
+ *
+ * @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
+ * @author Antranik Agopian <hello@antranik.dev>
+ */

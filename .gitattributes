@@ -1,0 +1,53 @@
+# Normalize line endings to LF on every commit, regardless of the
+# developer's OS. This is what keeps the repo consistent when Windows
+# developers contribute.
+
+* text=auto eol=lf
+
+# Binary files - never attempt line-ending conversion or diff as text
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.webp   binary
+*.avif   binary
+*.heic   binary
+*.ico    binary
+*.svg    text
+*.woff   binary
+*.woff2  binary
+*.ttf    binary
+*.otf    binary
+*.eot    binary
+*.mp4    binary
+*.webm   binary
+*.mp3    binary
+*.wav    binary
+*.ogg    binary
+*.zip    binary
+*.pdf    binary
+*.psd    binary
+*.ai     binary
+
+# Explicit text types (markdown, source, configs, manifests)
+*.md           text eol=lf
+*.markdown     text eol=lf
+*.js           text eol=lf
+*.mjs          text eol=lf
+*.css          text eol=lf
+*.php          text eol=lf
+*.json         text eol=lf
+*.webmanifest  text eol=lf
+*.html         text eol=lf
+*.txt          text eol=lf
+*.conf         text eol=lf
+*.sh           text eol=lf
+*.map          text eol=lf
+
+# Linguist overrides - tell GitHub these are not "vendored"
+*.css  linguist-vendored=false
+*.js   linguist-vendored=false
+
+# Exclude docs from GitHub's language stats so the repo shows
+# primarily JS/PHP/CSS
+*.md  linguist-documentation
