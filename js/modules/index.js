@@ -3,10 +3,23 @@
  * as <script id="data-modules">), dynamically imports each active
  * module's manifest.js, and exports MODULE_LIST.
  *
+ * data/modules.json accepts two entry forms, mixed freely:
+ *   strings  - {"modules": ["card", "module-a"]}
+ *              mount defaults: target '#module', position 'first'
+ *   objects  - {"modules": [
+ *                { "name": "card", "target": "#module", "position": "first" }
+ *              ]}
+ *              explicit mount config per module
+ *
+ * Each loaded descriptor is augmented with a `mount` object carrying
+ * the resolved entry's target/position (undefined when the entry was a
+ * string - modules fall back to their own defaults). app.js passes this
+ * as the second argument to manifest.init(moduleData, mount).
+ *
  * Module descriptor shape (each manifest.js default export):
  *   name     string   unique identifier
  *   config   object   the module's config.js exports
- *   init     async    async function receiving loaded data
+ *   init     async    async function (moduleData, mount)
  *
  * The import path is relative to this file. Modules not present on
  * disk are skipped with a console warning. If data/modules.json is
@@ -30,15 +43,24 @@ const FALLBACK = ['card'];
 
 /* PUBLIC API */
 
-const _active = (readInlineData('modules')?.modules || FALLBACK)
-    .filter(n => typeof n === 'string' && /^[a-z0-9_-]+$/i.test(n));
+const _raw = readInlineData('modules')?.modules || FALLBACK;
+const _active = _raw
+    .map(entry => typeof entry === 'string' ? { name: entry } : entry)
+    .filter(entry => typeof entry?.name === 'string' && /^[a-z0-9_-]+$/i.test(entry.name));
+
 const _loaded = await Promise.all(
-    _active.map(async (name) => {
+    _active.map(async (entry) => {
         try {
-            const mod = await import(`./${name}/manifest.js`);
-            return mod.default;
+            const mod = await import(`./${entry.name}/manifest.js`);
+            return {
+                ...mod.default,
+                mount: {
+                    target: entry.target,
+                    position: entry.position
+                }
+            };
         } catch (err) {
-            console.warn(`[modules] "${name}" not found, skipping:`, err.message);
+            console.warn(`[modules] "${entry.name}" not found, skipping:`, err.message);
             return null;
         }
     })
@@ -46,8 +68,10 @@ const _loaded = await Promise.all(
 
 /**
  * Modules to load at boot, in the order listed in data/modules.json.
- * Modules not present on disk are silently skipped.
+ * Modules not present on disk are silently skipped. Each descriptor
+ * carries a `mount` object with target/position from the manifest
+ * entry (or undefined when the entry was a plain string).
  *
- * @type {Array<{ name: string, config: Object, init: Function }>}
+ * @type {Array<{ name: string, config: Object, init: Function, mount: { target?: string, position?: string } }>}
  */
 export const MODULE_LIST = _loaded.filter(Boolean);

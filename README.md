@@ -1,7 +1,7 @@
 # Pixelian
 
-> Last updated: `20261111`
-> Version: `1.0.0`
+> Last updated: `20261112`
+> Version: `1.1.0`
 > Author: Antranik Agopian <hello@antranik.dev>
 > License: Antranik License 1.0 (see [LICENSE](LICENSE))
 
@@ -13,7 +13,7 @@ Full reference: [GUIDE.md](GUIDE.md).
 
 - **Core** - Panel, Window, Taskbar, Events, Theme, ErrorDialog, Api, Sanitize, and pure helpers.
 - **Card** - Headerless panel module driven by `/data/card.json`.
-- **Module system** - `data/modules.json` picks which modules load. `js/modules/index.js` dynamically imports each active module's `manifest.js`. Add or remove modules by editing one JSON file.
+- **Module system** - `data/modules.json` picks which modules load and where each mounts. `js/modules/index.js` dynamically imports each active module's `manifest.js` and passes the resolved mount config as `init(moduleData, mount)`.
 - **Boot** - Loader, theme bootstrap, taskbar, site data bindings, URL error routing, no-JS fallback.
 
 ## Requirements
@@ -31,6 +31,26 @@ php -S localhost:8000
 `setup.sh` prompts for project details, fills the `Your*` placeholders, and creates `media/`. Idempotent - safe to re-run.
 
 Open [http://localhost:8000](http://localhost:8000).
+
+## Module placement
+
+Modules declare where they mount in `data/modules.json`:
+
+```bash
+{
+    "modules": [
+        { "name": "card", "target": "#module", "position": "first" }
+    ]
+}
+```
+
+Two entry forms work, mixed freely:
+
+- **Strings** - `["card", "module-a"]` uses default mount (`target: '#module'`, `position: 'first'`).
+
+- **Objects** - `{ "name": "card", "target": "#hero", "position": "last" }` overrides per module.
+
+Both fields are optional. Missing `target` defaults to `'#module'`; missing `position` defaults to `'first'`. Existing `["card"]` deployments continue to work unchanged.
 
 ## Contributing
 
@@ -51,7 +71,7 @@ New files use your name in `@author`. Modified files keep the original `@copyrig
 @modified-by Your Name <you@example.com> on YYYY-MM-DD
 ```
 
-`@copyright` never changes - Antranik owns the template code even after you modify it. See [GUIDE.md](GUIDE.md) §3.3 for the full policy.
+`@copyright` never changes - Antranik owns the template code even after you modify it. See [GUIDE.md](GUIDE.md). Comments, for the full policy.
 
 ## Attribution
 
@@ -61,4 +81,4 @@ Ship with `Powered by Antranik.dev` in the footer if you use Pixelian as-is. If 
 
 Copy `nginx.example.conf` to `/etc/nginx/sites-available/` and edit paths. Delete non-runtime files from the docroot after deploy.
 
-See [GUIDE.md](GUIDE.md) section 9 for the full deploy checklist and PRODUCTION CLEANUP list.
+See [GUIDE.md](GUIDE.md), Deployment, for the full deploy checklist and PRODUCTION CLEANUP list.

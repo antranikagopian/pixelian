@@ -7,7 +7,7 @@
  * through parseDate() so callers can pass a Date instance, an epoch
  * number, a YYYYMMDD string, a YYYY-MM-DD string, or a full ISO 8601
  * string and get consistent behavior. YYYYMMDD is the canonical format
- * for user-provided dates in the JSON data files (see GUIDE.md §4.1
+ * for user-provided dates in the JSON data files (see GUIDE.md,
  * Dates). Full ISO 8601 is the format for API-supplied dates
  * (article.date from /api/news).
  *
@@ -21,7 +21,7 @@ import { readInlineData } from './data.js';
 
 /* CONSTANTS */
 
-export const VERSION = '1.0.0';
+export const VERSION = '1.1.0';
 
 /* SEEDED RANDOM */
 

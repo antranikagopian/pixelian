@@ -9,7 +9,7 @@
 #
 # @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
 # @author Antranik Agopian <hello@antranik.dev>
-# @version 1.0.0
+# @version 1.1.0
 
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -193,6 +193,6 @@ echo "  2. Replace icons/ with your project's favicon set."
 echo "  3. Preview:  php -S localhost:8000"
 echo "     Open:     http://localhost:8000"
 echo ""
-echo "Before going live, see GUIDE.md section 9 for the full deploy"
+echo "Before going live, see GUIDE.md, Deployment, for the full deploy"
 echo "checklist and the PRODUCTION CLEANUP list."
 echo ""

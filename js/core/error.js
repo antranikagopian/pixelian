@@ -30,7 +30,7 @@
  * `{ capture: true }` so it fires BEFORE the theme dropdown handler
  * (bubble phase). This makes error dismissal win over every other ESC
  * consumer when both are open, matching the documented priority chain
- * (GUIDE.md §7.12, Error behavior).
+ * (see GUIDE.md, Error, ESC priority).
  *
  * The panel-mode dialog is configured close-only:
  *   showMinimize: false  -> no minimize button, not in taskbar

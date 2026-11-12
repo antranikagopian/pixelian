@@ -188,9 +188,12 @@ async function initApp() {
                 moduleData[url] = data;
             }
 
-            /* Assert requirements, then initialise. */
+            /* Assert requirements, then initialise. mount carries
+               target/position from data/modules.json (undefined when
+               the entry was a plain string - modules fall back to
+               their own defaults). */
             assertRequirements(mod.name, version, requiresCore, deps, requiresPrimitives);
-            await mod.init(moduleData);
+            await mod.init(moduleData, mod.mount);
             return mod.name;
         })();
     });

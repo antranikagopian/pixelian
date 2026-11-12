@@ -1,7 +1,7 @@
 # Pixelian
 
-> Last updated: `20261111`
-> Version: `1.0.0`
+> Last updated: `20261112`
+> Version: `1.1.0`
 > Author: Antranik Agopian <hello@antranik.dev>
 > License: Antranik License 1.0 (see [LICENSE](LICENSE))
 
@@ -291,7 +291,7 @@ Field            # camelCase - launchDate, showBrand, poweredBy
                  #
                  # @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
                  # @author {YourName} <{your@email}>
-                 # @version 1.0.0
+                 # @version 1.1.0
 
 # INLINE PHP BLOCKS - index.php top comment only
                  # The same header rules apply to the FIRST comment
@@ -842,8 +842,14 @@ Module dir       # Each subdirectory is one module: js/modules/{name}/
                  #   May contain additional support files
 Loader           # js/modules/index.js dynamically imports each active
                  #   module's manifest.js based on data/modules.json
-Active list      # data/modules.json -> {"modules": ["card"]}
-                 #   Override per deployment. Pixelian default: ["card"]
+Active list      # data/modules.json. Two entry forms, mixed freely:
+                 #   Strings: ["card", "module-a"]
+                 #     mount defaults: target '#module', position 'first'
+                 #   Objects: [{ "name": "card", "target": "#module",
+                 #              "position": "first" }]
+                 #     explicit mount config per module
+                 #   Missing target -> '#module'
+                 #   Missing position -> 'first'
                  #   Every name must have js/modules/{name}/manifest.js
 ```
 
@@ -1089,11 +1095,30 @@ body             # Card body text (textContent, no HTML)
 `data/modules.json`:
 
 ```bash
-modules          # Array of module names to load at boot
-                 #   Pixelian default: ["card"]
+modules          # Array of module entries to load at boot
+                 #   Pixelian default:
+                 #     [{ "name": "card", "target": "#module",
+                 #        "position": "first" }]
+                 #   Two entry forms, mixed freely:
+
+                 #   Strings - mount defaults
+                 #     ["card", "module-a"]
+                 #     target '#module', position 'first'
+
+                 #   Objects - explicit mount config
+                 #     [{ "name": "card", "target": "#hero",
+                 #        "position": "last" }]
+
+                 #   Fields per object entry:
+                 #     name     string  required
+                 #     target   string  optional; defaults to '#module'
+                 #     position string  optional; defaults to 'first'
+                 #              enum: 'first' | 'last'
+
                  #   Each name must have js/modules/{name}/manifest.js
-                 #   Unknown names are skipped with a console warning
+                 #   Unknown names skipped with a console warning
                  #   Missing file falls back to ["card"]
+                 #   Empty array ({"modules": []}) loads no modules
 ```
 
 ## 7. Core
@@ -1112,7 +1137,7 @@ Foundation -> Helpers -> Service -> Primitives
 
 ```bash
 # CONSTANTS
-CORE_VERSION             # '1.0.0' - the core build version
+CORE_VERSION             # '1.1.0' - the core build version
                          #   Bump MAJOR.MINOR.PATCH on every release
 CORE_CODE_NAME           # 'Pixelian' - the project name
 ```
@@ -1144,11 +1169,11 @@ registerModule(name, version, requiresCore)
 
 assertRequirements(name, version, requiredCore, dependencies, requiredPrimitives)
                          # Throws if any requirement is not satisfied
-                         #   requiredCore:        minimum core version (e.g. '1.0.0')
+                         #   requiredCore:        minimum core version (e.g. '1.1.0')
                          #   dependencies:        { otherModule: minVersion } peer deps
                          #   requiredPrimitives:  names must be in KNOWN_PRIMITIVES
                          # Example error:
-                         #   Module "blog" v1.0.0 requires "card", but it
+                         #   Module "blog" v1.1.0 requires "card", but it
                          #   is not registered.
 
 getLoadedModules(opts)
@@ -1685,8 +1710,8 @@ Content modules in `js/modules/`. Each has `config.js` (VERSION, REQUIRES_CORE, 
 
 ```bash
 # CONFIG
-VERSION                    # '1.0.0'
-REQUIRES_CORE              # '1.0.0'
+VERSION                    # '1.1.0'
+REQUIRES_CORE              # '1.1.0'
 REQUIRES_PRIMITIVES        # ['Panel']
 REQUIRES_DATA              # ['/data/card.json']
 DEPENDENCIES               # {}
@@ -1748,7 +1773,7 @@ data/{name}.json               # If the module loads data
    - export const VERSION, REQUIRES_CORE, REQUIRES_PRIMITIVES,
      REQUIRES_DATA, DEPENDENCIES
    - REQUIRES_PRIMITIVES must reference names in KNOWN_PRIMITIVES (§7.2)
-   - DEPENDENCIES for peer modules: { other: '1.0.0' }
+   - DEPENDENCIES for peer modules: { other: '1.1.0' }
 
 2  Create js/modules/{name}/main.js
    - export class {Name}
@@ -1761,11 +1786,19 @@ data/{name}.json               # If the module loads data
    - export default {
        name: '{name}',
        config,
-       init: async (moduleData) => {
-           await init{Name}({ target: '#module', position: 'first',
-                             data: moduleData?.['/data/{name}.json'] });
+       init: async (moduleData, mount = {}) => {
+           await init{Name}({
+               target: mount.target || '#module',
+               position: mount.position || 'first',
+               data: moduleData?.['/data/{name}.json']
+           });
        }
      }
+   - mount is undefined-safe: when data/modules.json uses the string
+     form, mount = { target: undefined, position: undefined }; the
+     '||' fallbacks above give the same defaults as hardcoding them.
+   - A module that ignores mount still works (init's second arg is
+     optional); it just always mounts at target '#module' / 'first'.
 
 4  Create css/{name}.css (if UI)
    - File header per §3.3 (with @copyright + @author)

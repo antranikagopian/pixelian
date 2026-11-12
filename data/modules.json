@@ -1,3 +1,5 @@
 {
-    "modules": ["card"]
+    "modules": [
+        { "name": "card", "target": "#module", "position": "first" }
+    ]
 }

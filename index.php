@@ -7,7 +7,7 @@
  *
  * Attribution lives here once. Section markers inside the file
  * (MODULE CONFIG, RESOLVE ACTIVE MODULES, Inline module data) do not
- * carry their own @copyright/@author - see GUIDE.md §3.3.
+ * carry their own @copyright/@author - see GUIDE.md.
  *
  * @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
  * @author Antranik Agopian <hello@antranik.dev>
@@ -19,30 +19,44 @@ header('Content-Type: text/html; charset=utf-8');
    Active modules are read from data/modules.json (overridden per
    deployment at merge time). Edit that file, not this one.
 
-   Examples:
-     {"modules": ["card", "module-a"]}            Card + one additional module
-     {"modules": ["module-a"]}                    A single custom module
-     {"modules": ["card", "module-a", "module-b"]} Multiple modules
+   Two entry forms, mixed freely:
+
+     Strings - mount defaults (target '#module', position 'first'):
+       {"modules": ["card", "module-a"]}
+
+     Objects - explicit placement per module:
+       {"modules": [
+           { "name": "card", "target": "#module", "position": "first" },
+           { "name": "module-a", "target": "#hero" }
+       ]}
 
    Every name must correspond to js/modules/{name}/manifest.js.
    Unknown names are skipped. Missing file falls back to ["card"].
-   Add a module: see GUIDE.md section 8.2. */
+   dd a module: see GUIDE.md, Add / Remove a Module. */
 
 /* RESOLVE ACTIVE MODULES
    Read data/modules.json (Pixelian default, overridden per deployment).
    Missing file falls back to ["card"] so a fresh clone still renders.
-   Validation filters non-strings and anything that could path-traverse. */
+   Normalizes both string and object entries into a name-only list -
+   PHP only needs the names for preloads, CSS injection, and data
+   inlining. Target/position flow through the inlined
+   <script id="data-modules"> to JS, which passes them to each
+   manifest.init as the `mount` argument. */
 $modulesPath = __DIR__ . '/data/modules.json';
-$activeModules = ['card'];
+$rawModules = ['card'];
 if (is_readable($modulesPath)) {
     $parsed = json_decode(file_get_contents($modulesPath), true);
     if (is_array($parsed['modules'] ?? null)) {
-        $activeModules = $parsed['modules'];
+        $rawModules = $parsed['modules'];
     }
 }
-$activeModules = array_values(array_filter($activeModules, function ($name) {
-    return is_string($name) && preg_match('/^[a-z0-9_-]+$/i', $name);
-}));
+$activeModules = [];
+foreach ($rawModules as $entry) {
+    $name = is_array($entry) ? ($entry['name'] ?? null) : $entry;
+    if (is_string($name) && preg_match('/^[a-z0-9_-]+$/i', $name)) {
+        $activeModules[] = $name;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

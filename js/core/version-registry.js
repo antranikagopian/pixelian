@@ -60,7 +60,7 @@ const _registry = {
 
 /**
  * Register the core version and code name. Called once from app.js.
- * @param {string} version - Core version string (e.g. "1.0.0").
+ * @param {string} version - Core version string (e.g. "1.1.0").
  * @param {string} codeName - Core code name (e.g. "Pixelian").
  */
 export function registerCore(version, codeName) {

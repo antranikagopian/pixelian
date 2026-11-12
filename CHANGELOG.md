@@ -1,9 +1,52 @@
 # Changelog
 
-> Last updated: `20261111`
-> Version: `1.0.0`
+> Last updated: `20261112`
+> Version: `1.1.0`
 
 All notable changes to Pixelian are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.1.0] - 2026-11-12
+
+Module placement moves to data. A deployment can now specify where each module's element is inserted without editing code.
+
+### Added
+
+- `data/modules.json` accepts two entry forms, mixed freely:
+  
+  - **Strings** - `["card", "module-a"]`. Mount defaults: target `'#module'`, position `'first'`.
+  - **Objects** - `[{ "name": "card", "target": "#module", "position": "first" }]`. Explicit mount config per module.
+
+- `js/modules/index.js` attaches a `mount: { target, position }` object to each loaded module descriptor, based on the manifest entry.
+
+- `manifest.init(moduleData, mount)` - second argument carries the resolved mount config. Optional; modules that ignore it continue to work unchanged.
+  
+  ### Changed
+
+- `app.js` passes `mod.mount` as the second argument to `mod.init()`.
+
+- `index.php` normalization accepts both string and object entries. PHP only needs the `name` field for preloads, CSS injection, and data inlining; target/position flow through the inlined `<script id="data-modules">` to JS.
+
+- Card `manifest.js` accepts `mount` and applies `target` / `position` overrides.
+
+- Card `VERSION` bumped to `1.1.0`.
+
+- Card `REQUIRES_CORE` bumped to `1.1.0`. Card v1.1.0 uses the new mount contract from base v1.1.0 - without it, the object-form entries in data/modules.json would be silently filtered, and card would not load at all. Requiring base v1.1.0 makes the failure loud (`assertRequirements` throws) instead of silent.
+
+- `CORE_VERSION` bumped to `1.1.0`.
+
+- `data/modules.json` sample updated to show the object form.
+  
+  ### Notes
+
+- Backward compatible: existing `{"modules": ["card"]}` string deployments work without changes.
+
+- Missing `target` -> `'#module'`. Missing `position` -> `'first'`.
+
+- `index.php` static shell unchanged: page meta, SITE_CONFIG, and inline CSS tokens stay hardcoded. Only the module normalization block changes; everything else in `index.php` is byte-identical.
+
+- Modules that do not need mount support continue to work without any update - `init(moduleData, mount = {})` is backward compatible.
+
+[1.1.0]: ../../releases/tag/v1.1.0
 
 ## [1.0.0] - 2026-11-11
 
@@ -66,7 +109,7 @@ First public release.
 - `@copyright` is fixed across every file: `Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.` Never changes, even after modification.
 - `@author` names the file's author. Template files ship with `Antranik Agopian <hello@antranik.dev>`. New files carry the contributor's name.
 - Files modified after shipping keep the original `@copyright` and `@author` lines, and gain a `@modified-by` line per modifier.
-- Attribution tier (`LICENSE` §2.d): `Powered by Antranik.dev` for unmodified deployments, `Extends Antranik.dev` once any shipped code file carries a `@modified-by` line.
+- Attribution tier (see LICENSE, Attribution, and GUIDE.md, Comments): `Powered by Antranik.dev` for unmodified deployments, `Extends Antranik.dev` once any shipped code file carries a `@modified-by` line.
 
 ### Notes
 

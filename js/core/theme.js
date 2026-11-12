@@ -26,8 +26,8 @@
  * ESC handling:
  *   Document-level, bubble phase. Fires after ErrorDialog's capture-phase
  *   handler, so an open error dialog always closes before the theme
- *   dropdown. Matches the documented priority chain in (GUIDE.md §7.12, 
- *   Error behavior).
+ *   dropdown. Matches the documented priority chain (see GUIDE.md,
+ *   Error, ESC priority).
  *
  * @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
  * @author Antranik Agopian <hello@antranik.dev>
