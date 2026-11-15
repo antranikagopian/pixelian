@@ -19,10 +19,6 @@
 
 import { readInlineData } from './data.js';
 
-/* CONSTANTS */
-
-export const VERSION = '1.1.0';
-
 /* SEEDED RANDOM */
 
 /* Internal LCG state. Mutated by seededRandom(). */

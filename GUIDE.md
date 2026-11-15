@@ -2,7 +2,7 @@
 
 > Last updated: `20261115`
 > 
-> Version: `1.2.1`
+> Version: `1.2.2`
 > 
 > Author: Antranik Agopian <hello@antranik.dev>
 > 
@@ -1158,7 +1158,7 @@ Foundation -> Helpers -> Service -> Primitives
 
 ```bash
 # CONSTANTS
-CORE_VERSION             # '1.2.1' - the core build version
+CORE_VERSION             # '1.2.2' - the core build version
                          #   Bump MAJOR.MINOR.PATCH on every release
 CORE_CODE_NAME           # 'Pixelian' - the project name
 ```
@@ -1213,8 +1213,6 @@ getLoadedModules(opts)
 `js/core/utils.js`:
 
 ```bash
-VERSION                  # Module version constant
-
 # SEEDED RANDOM
 seededRandom()           # LCG pseudo-random in [0, 1). Deterministic across reloads.
 resetSeed(newSeed)       # Reset the LCG seed (default: 42)

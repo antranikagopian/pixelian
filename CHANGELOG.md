@@ -2,6 +2,20 @@
 
 All notable changes to Pixelian are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+---
+
+## [1.2.2] - 2026-11-15
+
+### Fixed
+
+- `CORE_VERSION` in `core/config.js` synced with the release tag. v1.2.1 shipped with `1.2.0` in the file, so the boot log and `getLoadedModules()` reported the wrong core version.
+
+### Removed
+
+- Stale `VERSION` export in `core/utils.js`. Unused, never updated past `'1.1.0'`, superseded by `CORE_VERSION` in `core/config.js`.
+
+---
+
 ## [1.2.1] - 2026-11-15
 
 Boot log. Core and module versions are printed to the console on every page load, so the loaded surface is visible without a manual `getLoadedModules()` call.
@@ -10,6 +24,8 @@ Boot log. Core and module versions are printed to the console on every page load
 
 - Automatic `getLoadedModules({ logToConsole: true })` call in `js/app.js` after module registration.
 
+---
+
 ## [1.2.0] - 2026-11-15
 
 Adds `waitForLoaderGone()` to `core/utils.js`: resolves when `#siteLoader` has fully faded out, no timeout.
@@ -17,6 +33,8 @@ Adds `waitForLoaderGone()` to `core/utils.js`: resolves when `#siteLoader` has f
 ### Added
 
 - `waitForLoaderGone()` in `core/utils.js`. Resolves when `#siteLoader` has fully faded out, with no safety timeout. Complements `waitForLoaderHidden()`, which keeps its 3-second safety timeout and is still available for callers that can tolerate resolving early. Modules whose next action is visible to the user (revealing content, starting an animation) should use `waitForLoaderGone` so they never run behind a still-visible loader on slow connections.
+
+---
 
 ## [1.1.0] - 2026-11-12
 
@@ -58,6 +76,8 @@ Module placement moves to data. A deployment can now specify where each module's
 - `index.php` static shell unchanged: page meta, SITE_CONFIG, and inline CSS tokens stay hardcoded. Only the module normalization block changes; everything else in `index.php` is byte-identical.
 
 - Modules that do not need mount support continue to work without any update - `init(moduleData, mount = {})` is backward compatible.
+
+---
 
 ## [1.0.0] - 2026-11-11
 
@@ -128,6 +148,8 @@ First public release.
 - Zero build step. ES modules and CSS load directly.
 - No path routing. Add your own resolver if you need deep-linking.
 - No server-side API. `core/api.js` is ready for your own `/api/*` endpoints.
+
+[1.2.2]: ../../compare/v1.2.1...v1.2.2
 
 [1.2.1]: ../../compare/v1.2.0...v1.2.1
 
