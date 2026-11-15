@@ -1,9 +1,17 @@
 # Changelog
 
-> Last updated: `20261112`
-> Version: `1.1.0`
+> Last updated: `20261115`
+> Version: `1.2.0`
 
 All notable changes to Pixelian are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.2.0] - 2026-11-15
+
+Adds `waitForLoaderGone()` to `core/utils.js`: resolves when `#siteLoader` has fully faded out, no timeout.
+
+### Added
+
+- `waitForLoaderGone()` in `core/utils.js`. Resolves when `#siteLoader` has fully faded out, with no safety timeout. Complements `waitForLoaderHidden()`, which keeps its 3-second safety timeout and is still available for callers that can tolerate resolving early. Modules whose next action is visible to the user (revealing content, starting an animation) should use `waitForLoaderGone` so they never run behind a still-visible loader on slow connections.
 
 ## [1.1.0] - 2026-11-12
 
@@ -19,8 +27,8 @@ Module placement moves to data. A deployment can now specify where each module's
 - `js/modules/index.js` attaches a `mount: { target, position }` object to each loaded module descriptor, based on the manifest entry.
 
 - `manifest.init(moduleData, mount)` - second argument carries the resolved mount config. Optional; modules that ignore it continue to work unchanged.
-  
-  ### Changed
+
+### Changed
 
 - `app.js` passes `mod.mount` as the second argument to `mod.init()`.
 
@@ -35,8 +43,8 @@ Module placement moves to data. A deployment can now specify where each module's
 - `CORE_VERSION` bumped to `1.1.0`.
 
 - `data/modules.json` sample updated to show the object form.
-  
-  ### Notes
+
+### Notes
 
 - Backward compatible: existing `{"modules": ["card"]}` string deployments work without changes.
 
@@ -45,8 +53,6 @@ Module placement moves to data. A deployment can now specify where each module's
 - `index.php` static shell unchanged: page meta, SITE_CONFIG, and inline CSS tokens stay hardcoded. Only the module normalization block changes; everything else in `index.php` is byte-identical.
 
 - Modules that do not need mount support continue to work without any update - `init(moduleData, mount = {})` is backward compatible.
-
-[1.1.0]: ../../releases/tag/v1.1.0
 
 ## [1.0.0] - 2026-11-11
 
@@ -117,5 +123,9 @@ First public release.
 - Zero build step. ES modules and CSS load directly.
 - No path routing. Add your own resolver if you need deep-linking.
 - No server-side API. `core/api.js` is ready for your own `/api/*` endpoints.
+
+[1.2.0]: ../../compare/v1.1.0...v1.2.0
+
+[1.1.0]: ../../compare/v1.0.0...v1.1.0
 
 [1.0.0]: ../../releases/tag/v1.0.0

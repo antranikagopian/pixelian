@@ -645,6 +645,37 @@ export function waitForLoaderHidden(safetyMs = 3000) {
 }
 
 /**
+ * Resolve when #siteLoader has fully faded out. No timeout: resolves
+ * on the loader's opacity transitionend, or immediately when it is
+ * already hidden (enableSiteLoader: false, ?error=NNN, or a late
+ * mount).
+ *
+ * Contrast with waitForLoaderHidden, which includes a 3-second safety
+ * timeout. Use waitForLoaderGone when the caller's next action is
+ * visible to the user (revealing content, starting an animation) and
+ * must not run while the loader is still on screen. On a slow
+ * connection, waitForLoaderHidden's safety timeout can fire before
+ * the loader actually hides, and the reveal would then play behind
+ * the loader. waitForLoaderGone does not have that failure mode.
+ *
+ * @returns {Promise<void>}
+ */
+export function waitForLoaderGone() {
+    return new Promise(resolve => {
+        const loader = document.getElementById('siteLoader');
+        if (!loader) return resolve();
+        if (getComputedStyle(loader).opacity === '0') return resolve();
+
+        const onEnd = (e) => {
+            if (e.target !== loader || e.propertyName !== 'opacity') return;
+            loader.removeEventListener('transitionend', onEnd);
+            resolve();
+        };
+        loader.addEventListener('transitionend', onEnd);
+    });
+}
+
+/**
  * Derive an inline data script ID from a data file URL.
  *
  * The server inlines each JSON file as:

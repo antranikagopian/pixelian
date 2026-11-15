@@ -1,11 +1,11 @@
 # Pixelian
 
-> Last updated: `20261112`
-> Version: `1.1.0`
+> Last updated: `20261115`
+> Version: `1.2.0`
 > Author: Antranik Agopian <hello@antranik.dev>
 > License: Antranik License 1.0 (see [LICENSE](LICENSE))
 
-Frontend foundation for PHP projects. Core primitives, a dynamic module system, and the Card module. Ships as static JS + CSS with a minimal PHP entry point.
+A zero-build frontend template for PHP projects: reusable UI primitives and a config-driven module system. Built to save time on repeat projects.
 **Details** live in the code: every `.js` file has a full JSDoc header with signatures and inline comments on non-obvious logic. This guide is the map; the code is the territory.
 
 ---
@@ -55,11 +55,11 @@ license: "Terms covered in LICENSE"
 #   grep -rn "Your[A-Z]" robots.txt sitemap.xml site.webmanifest
 
 # THEN REVIEW
-/index.php              # <title>, meta, OG tags, SITE_CONFIG (§5.4)
+/index.php              # <title>, meta, OG tags, SITE_CONFIG
 /data/site.json         # Brand, tagline, footer, copyright
 /data/card.json         # Card content
 /data/modules.json      # Active module list, e.g. {"modules": ["card"]}
-                        #   Add module names here (see §8.2)
+                        #   Add module names here (see Add / Remove a Module)
 /icons/                 # Replace template favicon with your own set
 /media/                 # Project GIFs, OG image, client logos
 
@@ -77,7 +77,7 @@ php -S localhost:8000
 #       @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
 #       @author Antranik Agopian <hello@antranik.dev>
 #       @modified-by {YourName} <{your@email}> on {YYYY-MM-DD}
-#   See §3.3 for the full policy.
+#   See Comments for the full policy.
 
 # RESET PERSISTED STATE
 Reset all               # localStorage.clear(); location.reload();
@@ -87,10 +87,10 @@ Reset one window        # localStorage.removeItem('panel:{id}:state');
 
 # DEBUG
 window.getLoadedModules({ logToConsole: true })   # Module registry dump
-                                                  # See §10 for options
+                                                  # See Troubleshooting for options
 
 # PRODUCTION DEPLOY
-#   See §9. The deploy checklist includes the full cleanup step:
+#   See Deployment. The deploy checklist includes the full cleanup step:
 #   delete setup.sh, nginx.example.conf, non-runtime files, docs.
 ```
 
@@ -165,7 +165,7 @@ window._onAppLoadError()         # <script onerror> handler
 window.siteShowError(code)       # backward-compatible alias
 window.siteShowErrorByCode(code) # convenience wrapper (resolves message)
 window.siteInit()                # re-dispatch loaderFinished once _appReady
-window.getLoadedModules(opts)    # version registry dump (see §10)
+window.getLoadedModules(opts)    # version registry dump (see Troubleshooting)
 
 # FALLBACK OVERLAY (only fires when js/app.js fails to load)
 siteShowError(container, code, message)
@@ -188,11 +188,13 @@ Pixelian is a foundation, not a finished application. What it intentionally does
 
 - **Server-side API** - `core/api.js` is ready, but no backend ships in Pixelian. Implement your own `/api/*` endpoints.
 
-- **Authentication** - no auth wiring. Wire your own session/CSRF on top of the existing meta tag + cookie pattern (see §4.3).
+- **Authentication** - no auth wiring. Wire your own session/CSRF on top of the existing meta tag + cookie pattern (see CSRF).
 
-- **Additional modules** - only Card ships. Add your own under `js/modules/` and register them in `data/modules.json` (see §8.2).
+- **Additional modules** - only Card ships. Add your own under `js/modules/` and register them in `data/modules.json` (see Add / Remove a Module).
 
 Pixelian provides the primitives to build these on top. What you build, how you build it, and when you ship it is up to you.
+
+---
 
 ## 2. Requirements
 
@@ -211,6 +213,8 @@ chrome: "157.0.8103.38"
 PHP: "8.4.27"
 nginx: "1.26.3"
 ```
+
+---
 
 ## 3. Coding Standards
 
@@ -316,8 +320,10 @@ Field            # camelCase - launchDate, showBrand, poweredBy
                  #   type. Ships unchanged in every file:
                  #     Antranik Agopian owns the template code.
                  # Keep this line in every file you redistribute,
-                 #   including files you modify. See LICENSE §2.a
-                 #   and §2.c.
+                 #   including files you modify. The LICENSE requires
+                 #   that the copyright holder notice is preserved on
+                 #   all copies and derivatives, and that modifications
+                 #   are attributed to their author.
                  # Do not change @copyright to your own name. The
                  #   template code is Antranik's work even after you
                  #   modify it. Attribution to the original author is
@@ -352,12 +358,13 @@ Field            # camelCase - launchDate, showBrand, poweredBy
                  #     @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
                  #     @author Antranik Agopian <hello@antranik.dev>
                  #     @modified-by Jane Doe <jane@example.com> on 2026-11-15
-                 # This satisfies the attribution requirement of
-                 #   LICENSE §2.c and maintains an honest history.
+                 # This satisfies the LICENSE attribution requirement
+                 #   for modifications and maintains an honest history.
                  #
                  # NEW FILES YOU CREATE
-                 # Retain the @copyright line (required by LICENSE §2.c)
-                 #   to indicate the file belongs to a Pixelian-derived
+                 # Retain the @copyright line (the LICENSE requires
+                 #   it to be preserved on copies and derivatives) to
+                 #   indicate the file belongs to a Pixelian-derived
                  #   project. Your original contributions remain your
                  #   copyright.
                  # Use YOUR name and email in @author:
@@ -378,8 +385,7 @@ Field            # camelCase - launchDate, showBrand, poweredBy
 ```bash
 # ATTRIBUTION TIER
                  # The LICENSE requires different footer text
-                 #   depending on whether the shipped code was modified
-                 #   (see LICENSE §2.d).
+                 #   depending on whether the shipped code was modified.
                  #
                  # UNMODIFIED - "Powered by Antranik.dev"
                  #   Trigger: no shipped code file ("*.js", "*.css",
@@ -422,7 +428,7 @@ Field            # camelCase - launchDate, showBrand, poweredBy
                     March 3 without this check. */
                  if (date.getMonth() !== m - 1) return null;
 
-# SECTION DIVIDER - group related code (see §3.4)
+# SECTION DIVIDER - group related code (see Category Dividers)
                  /* ASYNC */
                  /* DATES */
                  /* PUBLIC API */
@@ -486,6 +492,8 @@ No parens        # No (internal) qualifier
 #   - renaming or removing it breaks callers
 #   - its JSDoc header is the contract callers rely on
 ```
+
+---
 
 ## 4. Global Rules
 
@@ -604,8 +612,8 @@ Accept           # application/json
 X-Requested-With # XMLHttpRequest
 Content-Type     # application/json (POST/PUT/PATCH only)
 Credentials      # same-origin
-X-CSRF-TOKEN     # When token available (see §4.3)
-X-XSRF-TOKEN     # When token available (see §4.3)
+X-CSRF-TOKEN     # When token available (see CSRF)
+X-XSRF-TOKEN     # When token available (see CSRF)
 
 # TIMEOUT
 Default          # 15s (AbortController)
@@ -626,7 +634,7 @@ HTML body        # Detected and replaced with status fallback
 # BACKEND MUST
 Content-Type     # application/json
 Error body       # Include "message" or "error" field in non-2xx
-X-Requested-With # Branch on XMLHttpRequest in nginx (see §9)
+X-Requested-With # Branch on XMLHttpRequest in nginx (see Deployment)
 ```
 
 ### 4.5 Error Routing
@@ -744,6 +752,8 @@ Why              # Loader never receives .hidden without JS, so it would
                  #   paint a solid rectangle over the page forever
 ```
 
+---
+
 ## 5. File Structure
 
 ### 5.1 Structure
@@ -770,7 +780,7 @@ Why              # Loader never receives .hidden without JS, so it would
 # DEFENSE IN DEPTH:
 # The nginx reference config denies dotfiles, .md, .sh, .conf, and other
 # source extensions. Even if a file is forgotten during cleanup, it is
-# never served. Delete + deny, not delete alone. See §9.
+# never served. Delete + deny, not delete alone. See Deployment.
 ```
 
 ```bash
@@ -860,10 +870,11 @@ Font Awesome 6.5.0               # https://cdnjs.cloudflare.com/ajax/libs/
                                  # Used by: window controls (window.js),
                                  #   theme widget (theme.js)
                                  # License: OFL 1.1 (fonts) / MIT (CSS/JS) /
-                                 #   CC BY 4.0 (icons). See §11.
+                                 #   CC BY 4.0 (icons). See Third-Party Licenses.
                                  # CDN usage requires no extra action.
                                  # Self-hosting requires bundling the
-                                 #   license texts (see §11.3).
+                                 #   license texts (see Self-Hosting under
+                                 #   Third-Party Licenses).
 ```
 
 ### 5.2 CSS Tokens
@@ -988,12 +999,14 @@ errorPixelCols    # Column count for overlay grid (7)
 errorPixelPattern # 0/1 pattern. Length must be a multiple of
                   #   errorPixelCols (currently 28 / 7 = 4 rows).
                   #   Same shape used by no-JS card data-filled markers.
-                  #   Keep in sync - see §4.7.
+                  #   Keep in sync - see No-JS Fallback.
 errorMessages     # code -> message map (HTML navigation only)
-                  #   See §4.5 for full rules
+                  #   See Error Routing for full rules
 errorContainer    # CSS selector for overlay mount. Current value:
                   #   'main'. Passed to document.querySelector().
 ```
+
+---
 
 ## 6. Data Files
 
@@ -1069,7 +1082,8 @@ copyright        # Footer copyright line
                  #   Example: "© {year} YourCopyright"
 poweredBy        # Footer "powered by" line
                  #   Rendered as innerHTML - never put user input here
-                 #   Must satisfy LICENSE §2.d (see §3.3 Attribution Tier)
+                 #   Must satisfy the LICENSE attribution terms
+                 #   (see Attribution Tier under Comments)
                  #   Unmodified code: "Powered by Antranik.dev"
                  #   Modified code:   "Extends Antranik.dev"
 showPoweredBy    # false hides the powered-by line
@@ -1120,6 +1134,8 @@ modules          # Array of module entries to load at boot
                  #   Missing file falls back to ["card"]
                  #   Empty array ({"modules": []}) loads no modules
 ```
+
+---
 
 ## 7. Core
 
@@ -1246,6 +1262,11 @@ getCsrfToken()             # Read from <meta name="csrf-token"> or XSRF-TOKEN co
 
 # LOADING
 waitForLoaderHidden(safetyMs)  # Resolve when #siteLoader fades. Default safety: 3000ms.
+waitForLoaderGone()            # Resolve when #siteLoader fully fades out. No
+                               #   timeout. Use when the next action is
+                               #   visible to the user. Complementary to
+                               #   waitForLoaderHidden, which keeps the
+                               #   3-second safety timeout.
 urlToInlineId(url)             # "/data/site.json" -> "site"
                                # "/data/blog/about.json" -> "blog-about"
 loadCSS(href)                  # Dynamically load stylesheet. Promise.
@@ -1319,7 +1340,7 @@ request(method, path, body, options)
                          # Throws ApiError on non-2xx or network failure
                          # Returns parsed JSON on success
                          #
-                         # Every request sends (see §4.4):
+                         # Every request sends (see API Client):
                          #   Accept: application/json
                          #   X-Requested-With: XMLHttpRequest
                          #   Content-Type: application/json (POST/PUT/PATCH only)
@@ -1368,7 +1389,7 @@ sanitizeHTML(html, rules)
                          #   Relative paths and #anchors always pass
                          #   Every <a> forced to rel="noopener noreferrer" target="_blank"
                          #   Rules priority: caller rules > DEFAULT_RULES
-                         # See §4.2 for full sanitization rules
+                         # See HTML Sanitization for full rules
 ```
 
 ### 7.8 Window
@@ -1404,7 +1425,7 @@ assertDependencies()     # Throws if EVENTS bus is missing or broken
 # PUBLIC API
 Window                   # Draggable + resizable window behavior
                          #   Adds drag, 8-way resize, controls, persistence, focus
-                         #   Emits lifecycle events on the bus (see §7.5)
+                         #   Emits lifecycle events on the bus (see Events)
 
 new Window({
   id,                    # Unique id (persistence key)
@@ -1700,6 +1721,8 @@ stripUrlErrorParam(messages)
                          # Error always wins when both are open.
 ```
 
+---
+
 ## 8. Modules
 
 Content modules in `js/modules/`. Each has `config.js` (VERSION, REQUIRES_CORE, REQUIRES_DATA, DEPENDENCIES, REQUIRES_PRIMITIVES) and `main.js` (class + init factory).
@@ -1772,7 +1795,8 @@ data/{name}.json               # If the module loads data
 1  Create js/modules/{name}/config.js
    - export const VERSION, REQUIRES_CORE, REQUIRES_PRIMITIVES,
      REQUIRES_DATA, DEPENDENCIES
-   - REQUIRES_PRIMITIVES must reference names in KNOWN_PRIMITIVES (§7.2)
+   - REQUIRES_PRIMITIVES must reference names in KNOWN_PRIMITIVES
+     (see Version Registry)
    - DEPENDENCIES for peer modules: { other: '1.1.0' }
 
 2  Create js/modules/{name}/main.js
@@ -1801,15 +1825,15 @@ data/{name}.json               # If the module loads data
      optional); it just always mounts at target '#module' / 'first'.
 
 4  Create css/{name}.css (if UI)
-   - File header per §3.3 (with @copyright + @author)
+   - File header per the Comments policy (with @copyright + @author)
    - Module root class .module-{name}
-   - Reuse tokens (§5.2) - do not hardcode colors
+   - Reuse tokens (see CSS Tokens) - do not hardcode colors
    - AUTO-INJECTED: index.php reads data/modules.json and emits
      <link rel="stylesheet" href="/css/{name}.css"> in <head>. No PHP
      edit needed.
 
 5  Create data/{name}.json (if data)
-   - Shape: see §6 conventions
+   - Shape: see Data Files conventions
 
 6  Update data/modules.json
    - Add "{name}" to the modules array:
@@ -1821,8 +1845,8 @@ data/{name}.json               # If the module loads data
      stylesheet.
 
 8  Update documentation
-   - §5.1 File Structure tree: add js/modules/{name}/ entries
-   - §8: add a new subsection for the module
+   - Structure tree: add js/modules/{name}/ entries
+   - Modules: add a new subsection for the module
 
 # NOTE: No index.php edit needed for data inlining. index.php reads
 # data/modules.json and inlines data automatically for every active
@@ -1836,11 +1860,12 @@ data/{name}.json               # If the module loads data
 2  Delete js/modules/{name}/
 3  Delete css/{name}.css
 4  Delete data/{name}.json (or keep if reused elsewhere)
-5  Update §5.1 and §8 documentation
+5  Update Structure and Modules documentation
 
 # GOTCHAS
 Boot fails silently   # If REQUIRES_CORE in config.js exceeds CORE_VERSION,
-                      #   assertRequirements throws at boot. See §7.2.
+                      #   assertRequirements throws at boot.
+                      #   See Version Registry.
 Missing manifest      # js/modules/{name}/manifest.js missing -> module
                       #   skipped with a console warning (not fatal).
 Missing import        # Broken import paths in a manifest abort the whole
@@ -1852,9 +1877,11 @@ Preloads forgotten    # Module works but CSS/JS download starts later -
                       #   slower boot, no visual bug.
 ```
 
+---
+
 ## 9. Deployment
 
-Pixelian ships as plain PHP + static files. A minimal reference nginx config ships in [`nginx.example.conf`](nginx.example.conf) at the repo root. **Copy it to `/etc/nginx/sites-available/`, edit paths, then delete it from the docroot** - see "PRODUCTION CLEANUP" in §5.1.
+Pixelian ships as plain PHP + static files. A minimal reference nginx config ships in [`nginx.example.conf`](nginx.example.conf) at the repo root. **Copy it to `/etc/nginx/sites-available/`, edit paths, then delete it from the docroot** - see "PRODUCTION CLEANUP" in Structure.
 
 ```bash
 # NGINX - REQUIRED BEHAVIOUR
@@ -1870,8 +1897,8 @@ Deny dotfiles    # location ~ /\.(?!well-known) { return 404; }
                  #   served even if accidentally deployed.
 Deny source/docs # location ~* \.(?:md|sh|conf|yml|yaml|lock)$ { return 404; }
                  #   Belt-and-suspenders. Delete these files on live (see
-                 #   PRODUCTION CLEANUP in §5.1), but deny in nginx so a
-                 #   forgotten file is still not served.
+                 #   Production Cleanup in Structure), but deny in nginx
+                 #   so a forgotten file is still not served.
                  #   Note: .json is NOT in this list - data files under
                  #   /data/ must remain served.
 
@@ -1899,7 +1926,7 @@ php -S           # php -S localhost:8000 -t . (serves index.php for /)
 6                # Delete from docroot: setup.sh, nginx.example.conf,
                  #   GUIDE.md, CHANGELOG.md, README.md, .editorconfig,
                  #   .gitattributes, .gitignore, .git/
-                 #   (See PRODUCTION CLEANUP in §5.1 for the full list.)
+                 #   (See Production Cleanup in Structure for the full list.)
 7                # Verify:  curl -sI https://<domain>/            # 200
                  #          curl -sI https://<domain>/data/site.json  # 200
                  #          curl -sI https://<domain>/missing     # 302 -> /?error=404
@@ -1909,6 +1936,8 @@ php -S           # php -S localhost:8000 -t . (serves index.php for /)
                  #   /?error=404 -> ErrorDialog; URL strips to /
 9                # Disable JS in DevTools: styled no-JS card visible
 ```
+
+---
 
 ## 10. Troubleshooting
 
@@ -1980,6 +2009,8 @@ Missing data file warning           # check path matches REQUIRES_DATA in
 Shows 9999 z-index                  # js/app.js failed to load; check Network
 Module fails to boot                # check console for assertRequirements error
 ```
+
+---
 
 ## 11. Third-Party Licenses
 

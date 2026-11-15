@@ -5,7 +5,7 @@
 > Author: Antranik Agopian <hello@antranik.dev>
 > License: Antranik License 1.0 (see [LICENSE](LICENSE))
 
-Frontend foundation for PHP projects. Core primitives, a dynamic module system, and the Card module. Static JS + CSS with no build step, served by a minimal PHP entry point.
+A zero-build frontend template for PHP projects: reusable UI primitives and a config-driven module system. Built to save time on repeat projects.
 
 Full reference: [GUIDE.md](GUIDE.md).
 
