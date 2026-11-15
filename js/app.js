@@ -77,6 +77,19 @@ for (const mod of MODULE_LIST) {
     registerModule(mod.name, version, requires);
 }
 
+/* Boot log. Prints core and module versions once at startup. */
+console.log(
+    `%c${CORE_CODE_NAME}%c v${CORE_VERSION}`,
+    'color:#4cffb0;font-weight:700;',
+    'color:inherit;'
+);
+const _bootRows = MODULE_LIST.map(mod => ({
+    module: mod.name,
+    version: mod.config.VERSION,
+    requires: mod.config.REQUIRES_CORE || '-'
+}));
+if (_bootRows.length > 0) console.table(_bootRows);
+
 /* Expose the version inspector for manual console use. */
 window.getLoadedModules = getLoadedModules;
 

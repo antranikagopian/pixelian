@@ -1,9 +1,12 @@
 # Pixelian
 
-> Last updated: `20261112`
-> Version: `1.1.0`
+> Last updated: `20261115`
+> 
+> Version: `1.2.1`
+> 
 > Author: Antranik Agopian <hello@antranik.dev>
-> License: Antranik License 1.0 (see [LICENSE](LICENSE))
+> 
+> License: see [LICENSE](LICENSE)
 
 A zero-build frontend template for PHP projects: reusable UI primitives and a config-driven module system. Built to save time on repeat projects.
 

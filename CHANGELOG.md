@@ -1,9 +1,14 @@
 # Changelog
 
-> Last updated: `20261115`
-> Version: `1.2.0`
-
 All notable changes to Pixelian are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.2.1] - 2026-11-15
+
+Boot log. Core and module versions are printed to the console on every page load, so the loaded surface is visible without a manual `getLoadedModules()` call.
+
+### Added
+
+- Automatic `getLoadedModules({ logToConsole: true })` call in `js/app.js` after module registration.
 
 ## [1.2.0] - 2026-11-15
 
@@ -123,6 +128,8 @@ First public release.
 - Zero build step. ES modules and CSS load directly.
 - No path routing. Add your own resolver if you need deep-linking.
 - No server-side API. `core/api.js` is ready for your own `/api/*` endpoints.
+
+[1.2.1]: ../../compare/v1.2.0...v1.2.1
 
 [1.2.0]: ../../compare/v1.1.0...v1.2.0
 

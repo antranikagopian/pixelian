@@ -1,9 +1,12 @@
 # Pixelian
 
 > Last updated: `20261115`
-> Version: `1.2.0`
+> 
+> Version: `1.2.1`
+> 
 > Author: Antranik Agopian <hello@antranik.dev>
-> License: Antranik License 1.0 (see [LICENSE](LICENSE))
+> 
+> License: see [LICENSE](LICENSE)
 
 A zero-build frontend template for PHP projects: reusable UI primitives and a config-driven module system. Built to save time on repeat projects.
 **Details** live in the code: every `.js` file has a full JSDoc header with signatures and inline comments on non-obvious logic. This guide is the map; the code is the territory.
@@ -108,6 +111,8 @@ window.getLoadedModules({ logToConsole: true })   # Module registry dump
 
 # 3. app.js top-level
 #    - registerCore(CORE_VERSION, CORE_CODE_NAME)
+#    - registerModule() for each MODULE_LIST entry
+#    - getLoadedModules({ logToConsole: true }) - prints core + modules
 #    - const TASKBAR = new TaskbarManager({ target: '.taskbar' })
 #    - new ThemeSelector({ target: TASKBAR.widgetSlot, position: 'first' })
 #    - const INIT_PROMISE = initApp() (parallel with loader animation)
@@ -295,7 +300,7 @@ Field            # camelCase - launchDate, showBrand, poweredBy
                  #
                  # @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
                  # @author {YourName} <{your@email}>
-                 # @version 1.1.0
+                 # @version 1.1.0 # replace with actual version
 
 # INLINE PHP BLOCKS - index.php top comment only
                  # The same header rules apply to the FIRST comment
@@ -1153,7 +1158,7 @@ Foundation -> Helpers -> Service -> Primitives
 
 ```bash
 # CONSTANTS
-CORE_VERSION             # '1.1.0' - the core build version
+CORE_VERSION             # '1.2.1' - the core build version
                          #   Bump MAJOR.MINOR.PATCH on every release
 CORE_CODE_NAME           # 'Pixelian' - the project name
 ```
@@ -1198,12 +1203,9 @@ getLoadedModules(opts)
                          #   opts.includeCore:   true (default)
                          #   opts.logToConsole:  false (default)
                          #
-                         # Object shape:
-                         #   { core: { version, codeName },
-                         #     modules: { name: { version, requiresCore } } }
-                         #
-                         # Array shape:
-                         #   [{ name: 'core', version, codeName }, ...modules]
+                         # Auto-called once at boot with logToConsole: true
+                         # (js/app.js, after module registration). Manual
+                         # calls still work and re-print on demand.
 ```
 
 ### 7.3 Utils
