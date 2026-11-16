@@ -11,7 +11,8 @@
  * Dates). Full ISO 8601 is the format for API-supplied dates
  * (article.date from /api/news).
  *
- * @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
+ * @copyright Copyright (c) 2026 Antranik Agopian
+ * @license Pixelian License (see LICENSE)
  * @author Antranik Agopian <hello@antranik.dev>
  */
 
@@ -131,6 +132,39 @@ export function shuffle(arr) {
         [copy[i], copy[j]] = [copy[j], copy[i]];
     }
     return copy;
+}
+
+/**
+ * Compute the column and row count for a flat pixel pattern.
+ *
+ * When overrideCols is a positive integer, it is used as the column
+ * count and rows are derived from pattern.length / overrideCols.
+ * This lets data/site.json -> pixelCols dictate any shape the
+ * heuristic cannot express (8, 10, 11, 13, ...).
+ *
+ * Without an override, the heuristic (mirrored in index.php):
+ *   1. Perfect square (n*n): cols = sqrt(n), rows = sqrt(n)
+ *   2. Multiple of 7 with n > 7: cols = 7, rows = n/7
+ *   3. n <= 7: cols = n, rows = 1
+ *   4. Fallback: cols = 7, rows = ceil(n/7)
+ *
+ * @param {number[]} pattern - Flat array of 0/1 values.
+ * @param {number} [overrideCols] - Explicit column count. Optional.
+ * @returns {{cols: number, rows: number}}
+ */
+export function computePixelLayout(pattern, overrideCols) {
+    const len = Array.isArray(pattern) ? pattern.length : 0;
+    if (len === 0) return { cols: 7, rows: 1 };
+
+    if (Number.isInteger(overrideCols) && overrideCols > 0) {
+        return { cols: overrideCols, rows: Math.max(1, Math.ceil(len / overrideCols)) };
+    }
+
+    const sqrt = Math.round(Math.sqrt(len));
+    if (sqrt * sqrt === len && sqrt <= 16) return { cols: sqrt, rows: sqrt };
+    if (len > 7 && len % 7 === 0) return { cols: 7, rows: len / 7 };
+    if (len <= 7) return { cols: len, rows: 1 };
+    return { cols: 7, rows: Math.ceil(len / 7) };
 }
 
 /* STRINGS */
@@ -738,8 +772,13 @@ export async function loadJSON(url) {
 }
 
 /**
- * Loads core site data. Reads inline first, then fetch, then hard-coded
- * fallback so the page always renders.
+ * Loads core site data. Reads inline first, then fetch, then
+ * hard-coded fallback so the page always renders. The fallback is
+ * Pixelian-branded (not a placeholder) because it is what visitors
+ * see when data/site.json is missing or unparseable. It is different
+ * from the "not yet set up" state (empty placeholders in
+ * data/site.json before setup.sh runs).
+ *
  * @returns {Promise<Object>}
  */
 export async function fetchSiteData() {
@@ -750,13 +789,14 @@ export async function fetchSiteData() {
     if (data) return data;
 
     return {
-        title: 'YourProject',
-        tagline: 'Your tagline goes here',
+        schemaVersion: 1,
+        title: 'Pixelian',
+        tagline: 'The family of pixels',
         showBrand: true,
         showTagline: true,
-        copyright: '&copy; 2026 YourProject&trade;',
-        poweredBy: 'Powered by <a href="https://antranik.dev" target="_blank" rel="noopener">Antranik.dev</a>',
-        showPoweredBy: true
+        copyright: '&copy; 2026 Pixelian',
+        attribution: 'Powered by <a href="https://pixelian.dev" target="_blank" rel="noopener">Pixelian.dev</a>',
+        showAttribution: true
     };
 }
 

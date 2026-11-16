@@ -16,7 +16,8 @@
  * headings, lists, emphasis, links, code blocks. No divs, no spans, no
  * styles, no scripts, no iframes, no forms.
  *
- * @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
+ * @copyright Copyright (c) 2026 Antranik Agopian
+ * @license Pixelian License (see LICENSE)
  * @author Antranik Agopian <hello@antranik.dev>
  */
 

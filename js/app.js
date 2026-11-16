@@ -7,6 +7,13 @@
  *  - initApp() runs in parallel with the site loader animation.
  *  - The loader hides only when BOTH init AND animation are finished.
  *  - Set `enableSiteLoader: false` in SITE_CONFIG to skip the loader.
+ *  - data/site.json is checked against CORE_SITE_DATA_SCHEMA before any
+ *    binding. Outdated configs fail loudly with migration steps instead
+ *    of silently hiding the attribution footer (a license violation).
+ *  - One boot summary prints after module inits settle: core version
+ *    line, then one table row per module (version, required core, init
+ *    status, error). Replaces the previous per-module console.log loop
+ *    and the standalone getLoadedModules call.
  *  - URL-triggered errors (?error=NNN) show the core ErrorDialog (panel
  *    mode) after boot. The dialog and the URL strip are implemented in
  *    core/error.js (showUrlErrorDialog + stripUrlErrorParam) so this
@@ -30,6 +37,20 @@
  * parent module if any child import 404s. Broken imports show the
  * fallback overlay at z-index 9999.
  *
+ * Schema check. CORE_SITE_DATA_SCHEMA (in core/config.js) declares the
+ * shape this build expects from data/site.json. Any file with a lower
+ * schemaVersion, or with no field at all, triggers assertSiteDataSchema
+ * before any binding runs. The error uses the same fallback overlay
+ * that fires when app.js fails to load, so it works even when no
+ * modules have initialized yet. Migration steps are printed in the
+ * dialog so the user does not need to open the CHANGELOG.
+ *
+ * Boot summary. One console.log for the core version, one console.table
+ * for the modules. Both fire after Promise.allSettled resolves, so the
+ * status column reflects actual init outcomes. The table is the single
+ * place to see the loaded surface. window.getLoadedModules stays
+ * available for on-demand re-inspection; it is no longer called at boot.
+ *
  * Layering:
  *  - core:     primitives (Panel, Window, Taskbar, Events, Theme)
  *              + services (ErrorDialog, Api, Sanitize)
@@ -40,13 +61,14 @@
  * each active module's manifest.js. Override data/modules.json to
  * add or remove modules - no code edit needed.
  *
- * @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
+ * @copyright Copyright (c) 2026 Antranik Agopian
+ * @license Pixelian License (see LICENSE)
  * @author Antranik Agopian <hello@antranik.dev>
  */
 
 /* IMPORTS */
 
-import { CORE_VERSION, CORE_CODE_NAME } from './core/config.js';
+import { CORE_VERSION, CORE_CODE_NAME, CORE_SITE_DATA_SCHEMA } from './core/config.js';
 import {
     registerCore,
     registerModule,
@@ -68,29 +90,18 @@ import { MODULE_LIST } from './modules/index.js';
    which core build is running. */
 registerCore(CORE_VERSION, CORE_CODE_NAME);
 
-/* GLOBALS */
-
-/* Register all modules (data only - does not throw). */
+/* Register all modules (data only - does not throw). Runs before
+   initApp so assertRequirements has the full registry when it checks
+   each module's REQUIRES_CORE and DEPENDENCIES. */
 for (const mod of MODULE_LIST) {
     const version = mod.config.VERSION;
     const requires = mod.config.REQUIRES_CORE || undefined;
     registerModule(mod.name, version, requires);
 }
 
-/* Boot log. Prints core and module versions once at startup. */
-console.log(
-    `%c${CORE_CODE_NAME}%c v${CORE_VERSION}`,
-    'color:#4cffb0;font-weight:700;',
-    'color:inherit;'
-);
-const _bootRows = MODULE_LIST.map(mod => ({
-    module: mod.name,
-    version: mod.config.VERSION,
-    requires: mod.config.REQUIRES_CORE || '-'
-}));
-if (_bootRows.length > 0) console.table(_bootRows);
-
-/* Expose the version inspector for manual console use. */
+/* Expose the version inspector for manual console use. The boot
+   summary below prints once automatically; this stays available for
+   on-demand re-inspection (e.g. after a module hot-swap). */
 window.getLoadedModules = getLoadedModules;
 
 /* STATE */
@@ -98,13 +109,110 @@ window.getLoadedModules = getLoadedModules;
 /* Tracks whether the app has finished initialising (used by siteInit). */
 let _appReady = false;
 
+/* HELPERS */
+
+/**
+ * Fail the boot with a clear migration message if data/site.json uses
+ * an older schema than this build expects. Runs before any binding so
+ * the attribution footer can never silently hide.
+ *
+ * Two failure shapes:
+ *   - Missing field: treats as schema 0 (pre-schema). Message names
+ *     the exact fields to add and rename.
+ *   - Lower integer: message names the schema found, the expected one,
+ *     and points at CHANGELOG.md for the migration steps.
+ *
+ * Both paths call window.siteShowError, which is defined in the inline
+ * script in index.php. It is available before app.js runs, so the
+ * dialog works even if the caller has not initialized any modules yet.
+ * Falls through silently if the function is somehow absent.
+ *
+ * @param {Object} siteData - Parsed data/site.json.
+ * @throws {Error} Always, after showing the error dialog. Boot stops.
+ */
+function assertSiteDataSchema(siteData) {
+    const hasSchema = Number.isInteger(siteData?.schemaVersion);
+    const schema = hasSchema ? siteData.schemaVersion : 0;
+
+    if (hasSchema && schema >= CORE_SITE_DATA_SCHEMA) return;
+
+    const container = document.querySelector('#module');
+    const message = hasSchema
+        ? `data/site.json uses schema ${schema}, but Pixelian v${CORE_VERSION} expects ${CORE_SITE_DATA_SCHEMA}. See CHANGELOG.md v1.3.0 for migration steps.`
+        : `data/site.json is missing "schemaVersion". Add "schemaVersion": ${CORE_SITE_DATA_SCHEMA} and rename "poweredBy" to "attribution", "showPoweredBy" to "showAttribution". See CHANGELOG.md v1.3.0.`;
+
+    if (typeof window.siteShowError === 'function') {
+        window.siteShowError(container, 'Config', message);
+    }
+
+    throw new Error(
+        `data/site.json schema ${schema} is outdated. Expected ${CORE_SITE_DATA_SCHEMA}.`
+    );
+}
+
+/**
+ * Print core version and one table row per module. Called once after
+ * every module init has settled.
+ *
+ * Two outputs:
+ *   1. console.log with the core name and version, styled with the
+ *      Pixelian accent color. Matches the brand color used in the
+ *      loader and panel accents.
+ *   2. console.table with one row per module. Columns: module name,
+ *      module version, required core version, init status (OK / FAIL),
+ *      error message (empty on success).
+ *
+ * Bails before the table when MODULE_LIST is empty (data/modules.json
+ * with {"modules": []}). The core line still prints, so the console
+ * shows at least one line even on a module-less deployment.
+ *
+ * @param {PromiseSettledResult[]} results - Aligned with MODULE_LIST.
+ */
+function printBootSummary(results) {
+    console.log(
+        `%c${CORE_CODE_NAME}%c v${CORE_VERSION}`,
+        'color:#4cffb0;font-weight:700;',
+        'color:inherit;'
+    );
+
+    if (MODULE_LIST.length === 0) return;
+
+    console.table(
+        MODULE_LIST.map((mod, i) => ({
+            module: mod.name,
+            version: mod.config.VERSION,
+            requires: mod.config.REQUIRES_CORE || '-',
+            status: results[i].status === 'fulfilled' ? 'OK' : 'FAIL',
+            error: results[i].status === 'rejected'
+                ? (results[i].reason?.message || String(results[i].reason))
+                : ''
+        }))
+    );
+}
+
+/* INIT */
+
 /**
  * Main application bootstrap.
  *
- * Loads site data, applies DOM bindings, initialises all modules, and
- * surfaces any module failures in an error dialog. Missing data files
- * log a warning but do not fail the module - every module guards its
- * data.
+ * Steps in order:
+ *   1. Load data/site.json (inline first, then fetch, then hard-coded
+ *      fallback so the page always renders).
+ *   2. Validate the schema. Outdated files abort boot with a dialog
+ *      that names the migration steps.
+ *   3. Apply DOM bindings for header, footer, and attribution. Each
+ *      binding hides its element when the value is missing or the
+ *      toggle key is false.
+ *   4. Collapse header .brand and footer .legal wrappers when both
+ *      children are hidden (no dangling gap).
+ *   5. Initialize all modules in parallel. Missing data files warn;
+ *      missing code imports still abort the whole graph.
+ *   6. Wait for all inits to settle (never reject).
+ *   7. Print the boot summary.
+ *   8. If any module failed, show an ErrorDialog. Skipped when the
+ *      boot was triggered by ?error=NNN, since the URL error takes
+ *      priority.
+ *   9. Fire loaderFinished so the site loader can hide.
  *
  * @returns {Promise<PromiseSettledResult[]>} Module init results.
  */
@@ -112,13 +220,19 @@ async function initApp() {
     const siteData = await fetchSiteData();
     window.__SITE_DATA__ = siteData;
 
-    /* DOM bindings for site data. Elements hide when the corresponding
-       flag is false or the value is empty. */
+    /* Schema check runs before any binding. A wrong shape would
+       silently hide the attribution footer, which is a license
+       violation. Failing loudly protects the footer and tells the
+       user exactly what to change. */
+    assertSiteDataSchema(siteData);
+
+    /* DOM bindings for site data. Elements hide when the
+       corresponding flag is false or the value is empty. */
     const siteBindings = [
-        { selector: 'header h1',   key: 'title',     type: 'text', toggleKey: 'showBrand' },
-        { selector: 'header p',    key: 'tagline',   type: 'text', toggleKey: 'showTagline' },
-        { selector: '.copyright',  key: 'copyright', type: 'html' },
-        { selector: '.powered-by', key: 'poweredBy', type: 'html', toggleKey: 'showPoweredBy' }
+        { selector: 'header h1',          key: 'title',       type: 'text', toggleKey: 'showBrand' },
+        { selector: 'header p',           key: 'tagline',     type: 'text', toggleKey: 'showTagline' },
+        { selector: '.copyright',         key: 'copyright',   type: 'html' },
+        { selector: '.legal-attribution', key: 'attribution', type: 'html', toggleKey: 'showAttribution' }
     ];
 
     for (const { selector, key, type, toggleKey } of siteBindings) {
@@ -155,13 +269,15 @@ async function initApp() {
         brand.style.display = bothHidden ? 'none' : '';
     }
 
-    /* Collapse the legal wrapper when both copyright and poweredBy are hidden. */
+    /* Collapse the legal wrapper when both copyright and attribution
+       are hidden. Prevents a dangling gap in the footer when both
+       site.json fields are empty and both toggles are off. */
     const legal = document.querySelector('footer .legal');
     if (legal) {
         const copyrightEl = legal.querySelector('.copyright');
-        const poweredByEl = legal.querySelector('.powered-by');
+        const attributionEl = legal.querySelector('.legal-attribution');
         const bothHidden =
-            copyrightEl?.style.display === 'none' && poweredByEl?.style.display === 'none';
+            copyrightEl?.style.display === 'none' && attributionEl?.style.display === 'none';
         legal.style.display = bothHidden ? 'none' : '';
     }
 
@@ -213,15 +329,13 @@ async function initApp() {
 
     const results = await Promise.allSettled(MODULES);
 
-    results.forEach((result, i) => {
-        const name = MODULE_LIST[i]?.name || `module ${i}`;
-        if (result.status === 'fulfilled') {
-            console.log(`✓ ${name}`);
-        } else {
-            console.error(`✗ ${name}`, result.reason);
-        }
-    });
+    /* Single boot summary. Replaces the previous per-module
+       console.log loop and the top-level getLoadedModules call. */
+    printBootSummary(results);
 
+    /* Module-failure dialog. Skipped when the boot was triggered by
+       ?error=NNN, since the URL error takes priority and its dialog
+       is opened by the .then below. */
     const failedResults = results.filter(r => r.status === 'rejected');
     if (failedResults.length > 0 && !window._hasUrlError) {
         const failedNames = results

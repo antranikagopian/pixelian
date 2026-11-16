@@ -1,17 +1,12 @@
 # Pixelian
 
-> Last updated: `20261115`
+> Last updated: `20261116`
 > 
-> Version: `1.2.2`
+> Version: `1.3.0`
 > 
 > Author: Antranik Agopian <hello@antranik.dev>
 > 
 > License: see [LICENSE](LICENSE)
-
-A zero-build frontend template for PHP projects: reusable UI primitives and a config-driven module system. Built to save time on repeat projects.
-**Details** live in the code: every `.js` file has a full JSDoc header with signatures and inline comments on non-obvious logic. This guide is the map; the code is the territory.
-
----
 
 ## 1. Overview
 
@@ -59,7 +54,8 @@ license: "Terms covered in LICENSE"
 
 # THEN REVIEW
 /index.php              # <title>, meta, OG tags, SITE_CONFIG
-/data/site.json         # Brand, tagline, footer, copyright
+/data/site.json         # Brand, tagline, footer, copyright,
+                        #   pixelPattern (shared pixel grid)
 /data/card.json         # Card content
 /data/modules.json      # Active module list, e.g. {"modules": ["card"]}
                         #   Add module names here (see Add / Remove a Module)
@@ -73,11 +69,13 @@ php -S localhost:8000
 #  every other path 404s locally. Card renders at /.)
 
 # WHEN YOU ADD OR MODIFY FILES
-#   New files you create keep @copyright and use your name as @author:
-#       @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
+#   New files you create keep @copyright and @license, use your name as @author:
+#       @copyright Copyright (c) 2026 Antranik Agopian
+#       @license Pixelian License (see LICENSE)
 #       @author {YourName} <{your@email}>
-#   Modified files keep both lines and add @modified-by:
-#       @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
+#   Modified files keep all three lines and add @modified-by:
+#       @copyright Copyright (c) 2026 Antranik Agopian
+#       @license Pixelian License (see LICENSE)
 #       @author Antranik Agopian <hello@antranik.dev>
 #       @modified-by {YourName} <{your@email}> on {YYYY-MM-DD}
 #   See Comments for the full policy.
@@ -90,7 +88,7 @@ Reset one window        # localStorage.removeItem('panel:{id}:state');
 
 # DEBUG
 window.getLoadedModules({ logToConsole: true })   # Module registry dump
-                                                  # See Troubleshooting for options
+                     # See Troubleshooting for options
 
 # PRODUCTION DEPLOY
 #   See Deployment. The deploy checklist includes the full cleanup step:
@@ -112,13 +110,14 @@ window.getLoadedModules({ logToConsole: true })   # Module registry dump
 # 3. app.js top-level
 #    - registerCore(CORE_VERSION, CORE_CODE_NAME)
 #    - registerModule() for each MODULE_LIST entry
-#    - getLoadedModules({ logToConsole: true }) - prints core + modules
 #    - const TASKBAR = new TaskbarManager({ target: '.taskbar' })
 #    - new ThemeSelector({ target: TASKBAR.widgetSlot, position: 'first' })
 #    - const INIT_PROMISE = initApp() (parallel with loader animation)
 
 # 4. initApp()
-#    - fetchSiteData() -> apply header/footer bindings
+#    - fetchSiteData() -> assertSiteDataSchema() -> apply header/footer bindings
+#      (schema check runs BEFORE any binding; outdated data/site.json
+#       aborts boot with migration steps in the fallback overlay)
 #    - MODULE_LIST is resolved dynamically: js/modules/index.js reads
 #      data/modules.json (e.g. ["card"]) and imports each module's
 #      manifest.js
@@ -126,6 +125,10 @@ window.getLoadedModules({ logToConsole: true })   # Module registry dump
 #        read /data/{name}.json (inline first)
 #        assertRequirements(name, version, requiresCore, deps, primitives)
 #        mod.init(data)
+#    - after all module inits settle: printBootSummary()
+#        prints "Pixelian vX.Y.Z" via console.log
+#        prints one console.table row per module
+#          (module, version, requires, status, error)
 
 # 5. Loader hidden when:
 #    - no URL error AND initPromise + loaderAnimationDone both settle
@@ -175,8 +178,8 @@ window.getLoadedModules(opts)    # version registry dump (see Troubleshooting)
 # FALLBACK OVERLAY (only fires when js/app.js fails to load)
 siteShowError(container, code, message)
                                  # Internal builder. Grid shape from
-                                 #   SITE_CONFIG.errorPixelCols +
-                                 #   errorPixelPattern. Hides loader.
+                                 #   SITE_CONFIG.pixelCols +
+                                 #   pixelPattern. Hides loader.
 siteShowErrorByCode(code)        # Resolves message from errorMessages,
                                  #   calls siteShowError
 window.siteShowError             # Aliased to siteShowErrorByCode
@@ -266,6 +269,14 @@ State            # _ + camelCase - module-scope mutable state
 Directory        # lowercase, single word - core, modules
 File             # lowercase, dot-separated - api.js, version-registry.js
 
+# PHP
+Variable         # camelCase - $pixelPattern, $coreVersion, $activeModules
+Function         # camelCase - computePixelLayout, inlineJson
+                 #   Matches the JS convention so shared algorithms
+                 #   (computePixelLayout) read identically in both
+                 #   languages. Only index.php defines PHP functions;
+                 #   setup.sh embeds PHP via heredoc but defines none.
+
 # CSS
 Module root      # .module-{name} - .module-error-panel
 Module part      # .module-{name}-{part} - .module-error-message
@@ -278,7 +289,7 @@ Type scale       # --fs-{scope}-{tier} - --fs-ui-sm
 Data attribute   # data-{name} - data-status, data-cmd
 
 # JSON
-Field            # camelCase - launchDate, showBrand, poweredBy
+Field            # camelCase - launchDate, showBrand, attribution
 ```
 
 ### 3.3 Comments
@@ -290,7 +301,8 @@ Field            # camelCase - launchDate, showBrand, poweredBy
                   * file is for and WHY it exists. Reference related
                   * files by path when helpful.
                   *
-                  * @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
+                  * @copyright Copyright (c) 2026 Antranik Agopian
+                  * @license Pixelian License (see LICENSE)
                   * @author {YourName} <{your@email}>
                   */
 
@@ -298,9 +310,9 @@ Field            # camelCase - launchDate, showBrand, poweredBy
                  #!/bin/bash
                  # Description prose.
                  #
-                 # @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
+                 # @copyright Copyright (c) 2026 Antranik Agopian
+                 # @license Pixelian License (see LICENSE)
                  # @author {YourName} <{your@email}>
-                 # @version 1.1.0 # replace with actual version
 
 # INLINE PHP BLOCKS - index.php top comment only
                  # The same header rules apply to the FIRST comment
@@ -321,20 +333,24 @@ Field            # camelCase - launchDate, showBrand, poweredBy
 
 ```bash
 # @copyright SEMANTICS
-                 # @copyright names the copyright holder and license
-                 #   type. Ships unchanged in every file:
+                 # @copyright names the copyright holder. Ships
+                 #   unchanged in every file:
                  #     Antranik Agopian owns the template code.
                  # Keep this line in every file you redistribute,
-                 #   including files you modify. The LICENSE requires
-                 #   that the copyright holder notice is preserved on
-                 #   all copies and derivatives, and that modifications
-                 #   are attributed to their author.
+                 #   including files you modify. See LICENSE
+                 #   sections 2.a and 2.c.
                  # Do not change @copyright to your own name. The
                  #   template code is Antranik's work even after you
                  #   modify it. Attribution to the original author is
                  #   a license requirement, not a stylistic choice.
                  #   Your contribution is recorded in @author (new
                  #   files) or @modified-by (modified files).
+                 # The license reference lives on its own line:
+                 #   "@license Pixelian License (see LICENSE)".
+                 #   Do not add a version number to @copyright or
+                 #   @license - the version lives in LICENSE only.
+                 #   This is what keeps a license bump from touching
+                 #   every code file.
 ```
 
 ```bash
@@ -351,29 +367,32 @@ Field            # camelCase - launchDate, showBrand, poweredBy
                  #   contributed most, first. If 50/50, whoever
                  #   started the file, first.
                  #   Example:
-                 #     @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
+                 #     @copyright Copyright (c) 2026 Antranik Agopian
+                 #     @license Pixelian License (see LICENSE)
                  #     @author Antranik Agopian <hello@antranik.dev>
                  #     @author Jane Doe <jane@example.com>
                  #
                  # MODIFYING SOMEONE ELSE'S FILE
-                 # Keep the original @copyright and @author lines
-                 #   unchanged. Add one @modified-by line per modifier,
-                 #   with the date of change.
+                 # Keep the original @copyright, @license, and @author
+                 #   lines unchanged. Add one @modified-by line per
+                 #   modifier, with the date of change.
                  #   Example:
-                 #     @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
+                 #     @copyright Copyright (c) 2026 Antranik Agopian
+                 #     @license Pixelian License (see LICENSE)
                  #     @author Antranik Agopian <hello@antranik.dev>
                  #     @modified-by Jane Doe <jane@example.com> on 2026-11-15
                  # This satisfies the LICENSE attribution requirement
                  #   for modifications and maintains an honest history.
                  #
                  # NEW FILES YOU CREATE
-                 # Retain the @copyright line (the LICENSE requires
-                 #   it to be preserved on copies and derivatives) to
-                 #   indicate the file belongs to a Pixelian-derived
-                 #   project. Your original contributions remain your
-                 #   copyright.
+                 # Retain the @copyright and @license lines (the LICENSE
+                 #   requires them to be preserved on copies and
+                 #   derivatives) to indicate the file belongs to a
+                 #   Pixelian-derived project. Your original
+                 #   contributions remain your copyright.
                  # Use YOUR name and email in @author:
-                 #     @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
+                 #     @copyright Copyright (c) 2026 Antranik Agopian
+                 #     @license Pixelian License (see LICENSE)
                  #     @author {YourName} <{your@email}>
                  #   e.g. @author Jane Doe <jane@example.com>
                  # Do NOT copy @author Antranik Agopian <hello@antranik.dev>
@@ -390,9 +409,10 @@ Field            # camelCase - launchDate, showBrand, poweredBy
 ```bash
 # ATTRIBUTION TIER
                  # The LICENSE requires different footer text
-                 #   depending on whether the shipped code was modified.
+                 #   depending on whether the shipped code was modified
+                 #   (see LICENSE section 2.d).
                  #
-                 # UNMODIFIED - "Powered by Antranik.dev"
+                 # UNMODIFIED - "Powered by Pixelian.dev"
                  #   Trigger: no shipped code file ("*.js", "*.css",
                  #     "index.php") contains a @modified-by line.
                  #   Configuration edits (data/*.json, robots.txt,
@@ -402,13 +422,20 @@ Field            # camelCase - launchDate, showBrand, poweredBy
                  #     data) does NOT count.
                  #   The default data/site.json already satisfies this.
                  #
-                 # MODIFIED - "Extends Antranik.dev"
+                 # MODIFIED - "Extends Pixelian.dev"
                  #   Trigger: any shipped code file contains a
                  #     @modified-by line.
                  #   Editing one line in a shipped stylesheet
                  #     switches the tier.
-                 #   Update data/site.json -> poweredBy to reflect it:
-                 #     "Powered by Antranik.dev" -> "Extends Antranik.dev"
+                 #   Update data/site.json -> attribution to reflect it:
+                 #     "Powered by Pixelian.dev" -> "Extends Pixelian.dev"
+                 #
+                 # AUTHOR-RESERVED
+                 #   "Powered by Antranik.dev" and "Built by
+                 #     Antranik.dev" are reserved for projects
+                 #     authored or directly supervised by Antranik
+                 #     Agopian. Third parties may not display these
+                 #     phrases. See LICENSE section 5.
                  #
                  # The @modified-by line is the machine-checkable test.
                  # No grep automation ships with the template - this is
@@ -743,11 +770,16 @@ Why              # Raw HTML contains no plaintext @
 Limitation       # Does NOT stop scrapers that decode HTML entities
 
 # PATTERN SYNC
-Rule             # Pixel canvas uses data-filled markers matching
-                 #   SITE_CONFIG.errorPixelPattern
-                 #   If you change one, change both
-                 #   Current pattern: 28 cells, 7 cols, 4 rows,
-                 #   filled at indices 3, 9, 11, 15, 19, 21, 27
+Rule             # Pixel canvas is generated from data/site.json ->
+                 #   pixelPattern by PHP at request time. The same
+                 #   field feeds the error overlay fallback
+                 #   (SITE_CONFIG.pixelPattern) and every module that
+                 #   renders the pattern (via
+                 #   window.__SITE_DATA__.pixelPattern). One edit,
+                 #   whole site follows.
+                 #   Rows and cols auto-computed from pattern length
+                 #   by index.php (mirrored in core/utils.js ->
+                 #   computePixelLayout).
 
 # STYLE OVERRIDE
 Base             # .no-js-backdrop { display: none } in inline <style>
@@ -769,6 +801,7 @@ Why              # Loader never receives .hidden without JS, so it would
 # DELETE from docroot:
 #   setup.sh            - once configured, not needed
 #   nginx.example.conf  - copy to /etc/nginx/, then delete from docroot
+#   SECURITY.md         - documentation, not served
 #   GUIDE.md            - documentation, not served
 #   CHANGELOG.md        - documentation, not served
 #   README.md           - documentation, not served
@@ -789,11 +822,12 @@ Why              # Loader never receives .hidden without JS, so it would
 ```
 
 ```bash
-pixelian/
+/
 ├── index.php                    # SPA entry, inline SITE_CONFIG, inline data, noscript
 ├── setup.sh                     # [delete] First-run config. Delete after setup.
 ├── nginx.example.conf           # [delete] Nginx reference. Copy to /etc/nginx/, delete from docroot.
-├── LICENSE                      # Antranik License 1.0. Legal notice.
+├── LICENSE                      # Pixelian License. Legal notice.
+├── SECURITY.md                  # [delete] Vulnerability reporting. Not served.
 ├── GUIDE.md                     # [delete] This document.
 ├── CHANGELOG.md                 # [delete] Version history.
 ├── README.md                    # [delete] Repo landing page.
@@ -803,7 +837,6 @@ pixelian/
 ├── .editorconfig                # [delete] Editor defaults.
 ├── .gitattributes               # [delete] Git line-ending rules.
 ├── .gitignore                   # [delete] Ignored paths.
-│
 ├── css/
 │   ├── site.css                 # Empty (tokens inline in index.php)
 │   ├── panel.css                # Panel frame, window, resize, scrollbar
@@ -811,13 +844,12 @@ pixelian/
 │   ├── theme.css                # Theme selector widget
 │   ├── error.css                # ErrorDialog panel + overlay
 │   └── card.css                 # Card module content overrides
-│
 ├── js/
 │   ├── app.js                   # Boot entry (imports the manifest)
 │   │
 │   ├── core/                    # Primitives + services (no content)
 │   │   ├── api.js               # Secure fetch client
-│   │   ├── config.js            # CORE_VERSION, CORE_CODE_NAME
+│   │   ├── config.js            # CORE_VERSION, CORE_CODE_NAME, CORE_SITE_DATA_SCHEMA
 │   │   ├── data.js              # readInlineData
 │   │   ├── error.js             # ErrorDialog + URL error routing
 │   │   ├── events.js            # Pub/sub bus
@@ -835,15 +867,12 @@ pixelian/
 │           ├── config.js        # VERSION, REQUIRES_CORE, REQUIRES_DATA
 │           ├── manifest.js      # Module descriptor (default export)
 │           └── main.js          # Card class + initCard factory
-│
 ├── data/
-│   ├── site.json                # Brand, tagline, footer, copyright
+│   ├── site.json                # Brand, pixelPattern, tagline, footer, copyright, attribution
 │   ├── card.json                # Card heading + body
 │   └── modules.json             # {"modules": ["card"]}
-│
 ├── media/                       # Project GIFs, OG image, client logos
 │   └── .gitkeep                 # Ships empty (setup.sh creates this)
-│
 └── icons/                       # Favicon set (replace with your own)
 ```
 
@@ -895,6 +924,9 @@ All design tokens live in the inline `<style>` in `index.php` (except module-sco
 --site-accent-{dark,light}
 --site-text-shadow
 --site-pixel-size               # 2.4rem - canonical pixel motif
+--site-underline-dashes         # Brand underline dash count = pattern cols
+--site-underline-dash           # calc(2em / 7) - dash width
+--site-underline-gap            # calc(1em / 7) - gap width
 --site-gap                      # 1rem
 --site-radius-{sm,md,lg}        # 0.25 / 0.375 / 0.5 rem
 --site-shadow-{sm,md}
@@ -997,14 +1029,25 @@ tagline           # Unused today
 # LOADER
 enableSiteLoader  # false skips loader animation entirely
                   #   Also sets window._siteLoaderEnabled
-loaderPixelCount  # Pixel count for site loader (7)
+loaderPixelCount  # Pixel count for the site loader animation
+                  #   Derived from data/site.json -> pixelPattern
+                  #   column count ($pixelCols), floored at 3.
+                  #   Same value drives the brand underline dash
+                  #   count, so the two elements always match the
+                  #   pattern width. Not independently configurable.
 
-# ERROR OVERLAY (fallback only - fires when js/app.js fails to load)
-errorPixelCols    # Column count for overlay grid (7)
-errorPixelPattern # 0/1 pattern. Length must be a multiple of
-                  #   errorPixelCols (currently 28 / 7 = 4 rows).
-                  #   Same shape used by no-JS card data-filled markers.
-                  #   Keep in sync - see No-JS Fallback.
+# PIXEL PATTERN (read from data/site.json at request time)
+pixelPattern      # Flat array of 0/1, single source of truth
+                  #   Used by: error overlay fallback, no-JS pixel
+                  #   grid, brand underline dash count, boot loader
+                  #   pixel count, and any module that renders the
+                  #   pattern (via window.__SITE_DATA__.pixelPattern)
+pixelCols         # Column count, auto-computed from
+                  #   pixelPattern.length by index.php. Override
+                  #   via data/site.json -> pixelCols when the
+                  #   pattern length has no clean layout. Mirrored
+                  #   in core/utils.js -> computePixelLayout.
+
 errorMessages     # code -> message map (HTML navigation only)
                   #   See Error Routing for full rules
 errorContainer    # CSS selector for overlay mount. Current value:
@@ -1074,6 +1117,30 @@ Version requirements # Still throw - assertRequirements runs at boot
 `data/site.json`:
 
 ```bash
+pixelPattern     # Flat array of 0/1. Single source for every
+                 #   component that renders the pixel pattern in the
+                 #   app: error overlay fallback, no-JS pixel grid,
+                 #   background logo, panel logo, and any other
+                 #   renderer. Edit once, whole site follows.
+                 #   Shipped default: [1,1,1,1,1,1,1] (single row).
+                 #   Rows and cols auto-computed from pattern length
+                 #   (see computePixelLayout in core/utils.js).
+pixelCols        # Optional. Explicit column count override.
+                 #   Positive integer. Wins over the auto-computed
+                 #   layout when present. Rows derive from
+                 #   pixelPattern.length / pixelCols. Use when the
+                 #   pattern length is 8, 10, 11, 13, or any value
+                 #   the layout heuristic cannot cleanly resolve.
+                 #   Absent -> heuristic runs:
+                 #     perfect square -> sqrt x sqrt
+                 #     multiple of 7 (n > 7) -> 7 columns
+                 #     n <= 7 -> single row
+                 #     fallback -> 7 columns, ceil(n/7) rows
+schemaVersion    # Expected shape of data/site.json.
+                 #   v1.3.0 expects 1.
+                 #   Missing field or older version fails the boot
+                 #   check in app.js with migration steps. See
+                 #   CHANGELOG.md v1.3.0.
 title            # Header brand text
 tagline          # Subtitle below the brand
 showBrand        # false hides the header brand block entirely
@@ -1085,16 +1152,17 @@ copyright        # Footer copyright line
                  #   Rendered as innerHTML - never put user input here
                  #   {year} works in any string value, replaced with the current year
                  #   Example: "© {year} YourCopyright"
-poweredBy        # Footer "powered by" line
+attribution      # Footer attribution line
                  #   Rendered as innerHTML - never put user input here
-                 #   Must satisfy the LICENSE attribution terms
-                 #   (see Attribution Tier under Comments)
-                 #   Unmodified code: "Powered by Antranik.dev"
-                 #   Modified code:   "Extends Antranik.dev"
-showPoweredBy    # false hides the powered-by line
+                 #   Required by LICENSE section 2.d
+                 #   Unmodified code: "Powered by Pixelian.dev"
+                 #   Modified code:   "Extends Pixelian.dev"
+                 #   Default shipped value satisfies the unmodified case
+showAttribution  # false hides the attribution line
                  #   true or missing = show when value is non-empty
                  #   Wrapper (footer .legal) collapses when both children are hidden
-                 #   Pixelian ships true (credits Antranik.dev by default)
+                 #   Pixelian ships true (attribution is a license
+                 #   requirement for external users)
 ```
 
 ### 6.2 Card
@@ -1158,9 +1226,15 @@ Foundation -> Helpers -> Service -> Primitives
 
 ```bash
 # CONSTANTS
-CORE_VERSION             # '1.2.2' - the core build version
+CORE_VERSION             # '1.3.0' - the core build version
                          #   Bump MAJOR.MINOR.PATCH on every release
 CORE_CODE_NAME           # 'Pixelian' - the project name
+CORE_SITE_DATA_SCHEMA    # 1 - expected shape of data/site.json
+                         #   Independent of CORE_VERSION. Bumps only
+                         #   when the shape changes (field rename,
+                         #   removal, type change), never on a
+                         #   regular release. See app.js ->
+                         #   assertSiteDataSchema.
 ```
 
 ### 7.2 Version Registry
@@ -1203,9 +1277,10 @@ getLoadedModules(opts)
                          #   opts.includeCore:   true (default)
                          #   opts.logToConsole:  false (default)
                          #
-                         # Auto-called once at boot with logToConsole: true
-                         # (js/app.js, after module registration). Manual
-                         # calls still work and re-print on demand.
+                         # Auto-called once at boot with a single
+                         # console.table after module inits settle
+                         # (js/app.js -> printBootSummary). Manual
+                         # calls re-print on demand.
 ```
 
 ### 7.3 Utils
@@ -1225,6 +1300,16 @@ throttle(fn, ms)         # Invoke at most once per ms window. Returns wrapped fn
 # MATH
 clamp(v, min, max)       # Clamp a number between min and max (inclusive).
 shuffle(arr)             # Fisher-Yates permutation. Returns new array, does not mutate.
+computePixelLayout(pattern, overrideCols)
+                         # { cols, rows } for a flat 0/1 pattern.
+                         #   Mirrors the layout rule in index.php.
+                         #   overrideCols (optional positive int)
+                         #   wins over the heuristic when present.
+                         #   Heuristic:
+                         #     perfect square -> sqrt x sqrt
+                         #     multiple of 7 (n > 7) -> 7 cols
+                         #     n <= 7 -> single row
+                         #     fallback -> 7 cols, ceil(n/7) rows
 
 # STRINGS
 escapeHTML(text)         # Safe for text content. Does NOT escape quotes.
@@ -1262,16 +1347,20 @@ getCsrfToken()             # Read from <meta name="csrf-token"> or XSRF-TOKEN co
 
 # LOADING
 waitForLoaderHidden(safetyMs)  # Resolve when #siteLoader fades. Default safety: 3000ms.
-waitForLoaderGone()            # Resolve when #siteLoader fully fades out. No
-                               #   timeout. Use when the next action is
-                               #   visible to the user. Complementary to
+waitForLoaderGone()            # Resolve when #siteLoader fully fades out.
+                               #   No timeout. Complementary to
                                #   waitForLoaderHidden, which keeps the
-                               #   3-second safety timeout.
+                               #   3-second safety timeout. Use when the
+                               #   next action is visible to the user.
 urlToInlineId(url)             # "/data/site.json" -> "site"
                                # "/data/blog/about.json" -> "blog-about"
 loadCSS(href)                  # Dynamically load stylesheet. Promise.
 loadJSON(url)                  # Fetch + parse JSON. Cached. Returns null on failure.
 fetchSiteData()                # Inline first -> fetch -> hard-coded fallback
+                               #   Fallback is Pixelian-branded (not
+                               #   "YourProject") so a broken or
+                               #   missing data/site.json still shows
+                               #   a valid footer.
 
 # VERSIONING
 versionSatisfies(actual, required)  # MAJOR.MINOR only. Patch ignored.
@@ -1924,9 +2013,8 @@ php -S           # php -S localhost:8000 -t . (serves index.php for /)
                  #   Symlink into /etc/nginx/sites-enabled/
                  #   nginx -t && systemctl reload nginx
 6                # Delete from docroot: setup.sh, nginx.example.conf,
-                 #   GUIDE.md, CHANGELOG.md, README.md, .editorconfig,
-                 #   .gitattributes, .gitignore, .git/
-                 #   (See Production Cleanup in Structure for the full list.)
+                 #   SECURITY.md, GUIDE.md, CHANGELOG.md, README.md,
+                 #   .editorconfig, .gitattributes, .gitignore, .git/
 7                # Verify:  curl -sI https://<domain>/            # 200
                  #          curl -sI https://<domain>/data/site.json  # 200
                  #          curl -sI https://<domain>/missing     # 302 -> /?error=404
@@ -2008,6 +2096,11 @@ Missing data file warning           # check path matches REQUIRES_DATA in
 # ERROR OVERLAY
 Shows 9999 z-index                  # js/app.js failed to load; check Network
 Module fails to boot                # check console for assertRequirements error
+Config error dialog on load         # data/site.json is missing schemaVersion
+                                    #   or uses an older schema. Read the
+                                    #   migration steps in the dialog, update
+                                    #   the file, reload. See CHANGELOG.md
+                                    #   v1.3.0.
 ```
 
 ---

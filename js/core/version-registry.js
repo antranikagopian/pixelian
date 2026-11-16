@@ -2,7 +2,8 @@
  * Central registry for core and module versions. Validates that a
  * module's declared primitives are known to the current core build.
  *
- * @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
+ * @copyright Copyright (c) 2026 Antranik Agopian
+ * @license Pixelian License (see LICENSE)
  * @author Antranik Agopian <hello@antranik.dev>
  */
 

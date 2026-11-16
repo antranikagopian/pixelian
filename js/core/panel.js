@@ -45,7 +45,8 @@
  *   minHeight         number   Resize floor height in px (default 80).
  *   className         string   Extra class on the root element.
  *
- * @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
+ * @copyright Copyright (c) 2026 Antranik Agopian
+ * @license Pixelian License (see LICENSE)
  * @author Antranik Agopian <hello@antranik.dev>
  */
 

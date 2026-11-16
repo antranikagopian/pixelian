@@ -1,140 +1,421 @@
-Antranik License 1.0
+Pixelian License 1.0
 
 Copyright (c) 2026 Antranik Agopian <hello@antranik.dev>
 
-SPDX-License-Identifier: LicenseRef-Antranik-1.0
+SPDX-License-Identifier: LicenseRef-Pixelian-1.0
 
 
 PREAMBLE
 
 This license governs the use, modification, and distribution of
-Pixelian (the "Software"). It is designed to be permissive for
-building applications on top of the Software, while requiring
-attribution to the original author and preservation of the
-Software's name.
+Pixelian (the "Software"), the Pixel Family: a source-available
+frontend template for PHP projects authored by Antranik Agopian.
+
+It is designed to permit free personal and commercial use, modification,
+and distribution while protecting the Software's identity, preserving
+its original authorship, and requiring visible attribution.
 
 This license is not a template for your own projects. It governs the
-Software, not derivative applications built with it. Applications you
-build with the Software may be licensed however you choose.
+Software and its incorporated components, not independently authored
+applications built using it.
+
+Applications built with the Software may be named, distributed, and
+licensed however their authors choose, subject to the requirements
+applicable to the incorporated Software.
 
 
 1. PERMISSION
 
 You are granted a worldwide, royalty-free, non-exclusive, perpetual
-license to:
+license, subject to the conditions below, to:
 
   a. Use the Software for any purpose, including commercial purposes.
   b. Copy and distribute the Software, in source or compiled form.
   c. Modify the Software and create derivative works.
-  d. Sublicense the Software as part of a larger application you build.
+  d. Incorporate the Software into larger applications and distribute
+     those applications under licensing terms of your choice.
 
-All permissions in this section are conditioned on your compliance
-with sections 2, 4, 5, and 6 of this license.
+The permissions in section 1.d do not grant permission to relicense
+the Software itself, remove its existing license conditions, or
+redistribute it as an independently branded replacement framework.
+
+The permissions are conditioned on compliance with sections 2, 4,
+5, and 6 of this license.
+
+No express patent license is granted by this license.
 
 
 2. ATTRIBUTION
 
-When you use, modify, or distribute the Software, you must:
+When you copy, modify, or distribute the Software, you must comply
+with the following requirements.
 
-  a. Retain the copyright notice at the top of this LICENSE file in
-     all copies of the Software. Each source file also carries a
-     "@copyright" line (naming Antranik Agopian and Antranik License
-     1.0) and an "@author" line (naming the file's author). Retain
-     both lines in any file you redistribute without modification
-     to that file.
-  b. Retain this LICENSE file (or a copy of its text) alongside any
-     distribution of the Software.
-  c. In every file you modify, keep the original "@copyright" and
-     "@author" lines in the file header unchanged, and add a
-     "@modified-by" line identifying you as the author of the
-     modification. See GUIDE.md section 3.3 for the exact format.
-  d. Display a clear attribution to Antranik.dev in the footer or
-     About screen of any application you ship that incorporates a
-     substantial portion of the Software. The required form depends
-     on whether you have modified the Software's code:
+  a. COPYRIGHT AND SOURCE HEADERS
+
+     Retain the original copyright and license notices in all copies
+     of the Software.
+
+     Original source files containing "@copyright", "@license", or
+     "@author" lines must retain those lines unchanged, whether the
+     files are redistributed with or without modifications.
+
+     You may add additional notices identifying your own contributions,
+     provided they do not replace, obscure, or misrepresent the
+     original authorship.
+
+  b. LICENSE PRESERVATION
+
+     Retain this LICENSE file, or its complete text, with any source
+     or compiled distribution containing the Software.
+
+     When the Software is distributed as part of a larger application,
+     its license may be included in a third-party licenses or notices
+     directory.
+
+     This requirement does not make the Pixelian License the license
+     of the independently authored application.
+
+     For hosted applications where the Software itself is not
+     distributed to recipients, the runtime attribution requirements
+     in section 2.d still apply.
+
+  c. MODIFICATION HEADERS
+
+     When modifying an original code file distributed with the
+     Software, you must:
+
+       - Retain its original "@copyright" line.
+       - Retain its original "@license" line.
+       - Retain its original "@author" line, where present.
+       - Add a "@modified-by" line identifying the modifier.
+
+     The "@modified-by" line must follow the format documented in
+     GUIDE.md section 3.3.
+
+     Additional modifiers may add their own "@modified-by" lines
+     without removing previous entries.
+
+     These requirements apply to original executable source files,
+     including JavaScript, CSS, and PHP files.
+
+     They also apply to files containing copied and modified Pixelian
+     source code, where the file format supports source comments.
+
+     Configuration files and other non-code files that do not support
+     such headers are exempt from the modification-header requirement.
+
+     Modifying code without adding the required "@modified-by" line
+     constitutes a license violation. The absence of this line does
+     not qualify modified code for unmodified attribution.
+
+  d. RUNTIME ATTRIBUTION
+
+     Any application distributed or deployed for use by others that
+     incorporates a substantial portion of the Software must display
+     a clear attribution to Pixelian.dev.
+
+     A substantial portion means original Pixelian code, styling,
+     layout components, modules, or core primitives that perform a
+     material functional or structural role in the application.
+
+     Incidental use of a small, isolated code fragment that does not
+     materially incorporate the Software's functionality or structure
+     does not, by itself, trigger runtime attribution.
+
+     Attribution must appear in a location that a typical user
+     viewing the application could reach within two clicks, such as
+     the footer of any page or an About screen linked from the main
+     navigation.
+
+     Where hyperlinks are supported, "Pixelian.dev" must link to
+     https://pixelian.dev.
+
+     If the application has no user-facing interface, equivalent
+     attribution must appear in its accompanying documentation or
+     distribution notices.
+
+     The required attribution depends on whether the Software's
+     original code has been modified.
+
 
      UNMODIFIED CODE
 
-     If no shipped code file ("*.js", "*.css", "index.php") contains a
-     "@modified-by" line, the footer or About screen must display
-     "Powered by Antranik.dev". The default line shipped in
-     data/site.json satisfies this requirement.
+     If the application incorporates original Pixelian code without
+     modifying that code, the attribution must read:
 
-     The following do NOT count as modification and keep you in the
-     unmodified tier:
+       "Powered by Pixelian.dev"
 
-       - Configuration edits (data/*.json, robots.txt, sitemap.xml,
-         site.webmanifest)
-       - Placeholder substitution performed by setup.sh
-       - Adding new files (custom modules under js/modules/, new CSS
-         files, new data files) that do not edit any shipped file
+     The default attribution shipped in data/site.json satisfies
+     this requirement.
+
+     The following do not count as Code Modifications:
+
+       - Configuration changes to data/*.json.
+       - Changes to robots.txt, sitemap.xml, or site.webmanifest.
+       - Placeholder substitutions performed by setup.sh.
+       - Adding independently authored modules under js/modules/.
+       - Adding independently authored CSS or JavaScript files.
+       - Adding new data or configuration files.
+       - Building application-specific functionality without altering
+         or adapting existing Pixelian source code.
+
+     These activities preserve the unmodified attribution tier,
+     provided no original Pixelian code is otherwise modified.
+
 
      MODIFIED CODE
 
-     If any shipped code file ("*.js", "*.css", "index.php") contains
-     a "@modified-by" line, the footer or About screen must display
-     "Extends Antranik.dev" or an equivalent phrase that clearly
-     identifies Antranik.dev as the source of the extended work. The
-     test is whether a shipped code file carries a "@modified-by"
-     line, not the size of the change - editing one line in a shipped
-     stylesheet triggers this tier.
+     If the application incorporates modifications to original
+     Pixelian code, the attribution must read:
 
-     In both cases, removing or obscuring the required attribution
-     without an equivalent replacement is a violation of this
-     license.
+       "Extends Pixelian.dev"
 
-Attribution must credit Antranik.dev as the source.
+     An equivalent phrase is permitted if it clearly identifies
+     Pixelian.dev as the source of the extended work and does not
+     imply that the copyright holder authored the application.
+
+     A Code Modification includes:
+
+       - Editing an original JavaScript, CSS, or PHP code file.
+       - Removing or replacing original executable code.
+       - Changing original layout, styling, modules, or core logic.
+       - Copying original Pixelian code into another file and
+         modifying that copied code.
+
+     The size of the modification does not matter.
+
+     Changing even one line in an original stylesheet triggers
+     the modified attribution tier.
+
+     Attribution is determined by actual code modifications, not
+     solely by the presence or absence of "@modified-by" annotations.
+
+     Removing or failing to add a required annotation does not
+     exempt the application from the modified attribution tier.
+
+
+     GENERAL ATTRIBUTION RULES
+
+     In both tiers:
+
+       - Attribution must identify Pixelian.dev as the source.
+       - Attribution must be visible or reasonably discoverable.
+       - Attribution must not be deliberately hidden or obscured.
+       - Attribution must not imply personal authorship or endorsement
+         by Antranik Agopian.
+       - Equivalent replacement text must preserve the same meaning.
+
+     Removing or obscuring the required attribution without an
+     equivalent replacement is a violation of this license.
 
 
 3. APPLICATIONS BUILT WITH THE SOFTWARE
 
-Applications you build with the Software are not subject to this
-license. You may license your application however you choose. The
-attribution requirement in section 2 applies to the application's
-runtime UI (footer or About screen), not to the application's own
-source code or to any license file you ship with it.
+Applications developed using the Software may be named, sold,
+distributed, and licensed however their authors choose.
+
+This license does not require application authors to:
+
+  a. Publish their independently authored source code.
+  b. License their independently authored code under this license.
+  c. Use the Pixelian name as their application's name.
+  d. Obtain permission for ordinary commercial application use.
+
+However, original Pixelian code incorporated into an application
+remains governed by the Pixelian License.
+
+The application's independent code and the incorporated Software
+may therefore be subject to different licensing terms.
+
+The attribution requirements in section 2 apply to qualifying
+applications, including commercially distributed applications.
+
+Including the Pixelian License in third-party notices does not
+make that license applicable to independently authored application
+code.
+
+An application must not be presented as an independently developed
+replacement framework when its primary purpose is to redistribute
+Pixelian or a modified version of Pixelian as a reusable template,
+starter kit, or framework.
+
+Such distributions are governed by the name-preservation requirements
+in section 4.
 
 
 4. NAME PRESERVATION
 
-You must not rename the Software. Forks and derivative works of the
-Software must continue to be identified as "Pixelian" and must not be
-presented to users under a different name. This requirement applies
-to the Software itself, not to applications you build with the
-Software. Applications you build with the Software may use any name
-you choose.
+The Software must continue to be identified as "Pixelian".
+
+Forks, modified versions, and derivative distributions of the Software
+must preserve the Pixelian identity when distributed as reusable
+frameworks, frontend templates, boilerplates, or starter kits.
+
+You may not:
+
+  a. Rename the Software to an unrelated framework name.
+  b. Redistribute Pixelian under a different identity while concealing
+     or replacing its original project name.
+  c. Present modified Pixelian code as an independently authored
+     replacement framework without identifying its Pixelian origin.
+  d. Remove the Pixelian identity from a fork to imply that the
+     underlying framework was developed independently.
+
+Unofficial forks may use descriptive qualifiers, such as:
+
+  "Pixelian - Unofficial Fork"
+  "Pixelian - Community Edition"
+  "Pixelian (Modified by [Contributor])"
+
+Such identifiers must clearly distinguish the fork from the official
+Pixelian project.
+
+Forks must not claim to be official releases or imply endorsement,
+maintenance, or supervision by the original copyright holder without
+written permission.
+
+This requirement applies to the Software itself, not to applications
+built using the Software.
+
+Applications may use any name or brand chosen by their authors,
+provided they comply with sections 2 and 5.
+
+The name-preservation requirement does not prevent developers from
+creating original frameworks inspired by general ideas or concepts
+used in Pixelian, provided they do not reproduce protected Pixelian
+code in violation of this license.
 
 
-5. TRADEMARK
+5. TRADEMARK AND BRAND PROTECTION
 
 The names "Antranik", "Antranik Agopian", "Antranik.dev", and
-"Antranik.am" identify the copyright holder and author of the
-Software. The name "Pixelian" identify the Software itself. You may 
-not use any of these names or their associated logos as the primary 
-brand of any product you sell or distribute without written 
-permission from the copyright holder.
+"Antranik.am" identify the copyright holder and author.
 
-The attribution requirement in section 2 is not a trademark license.
-It ensures credit for the Software's author remains visible when the
-Software is used. It does not grant any right to use the trademarks
-in connection with products you build with the Software, beyond
-displaying the attribution described in section 2.d.
+The names "Pixelian", "Pixelian.dev", and "Pixelian.net" identify
+the Software and its project.
+
+These names, together with their associated logos and branding,
+remain subject to the applicable rights of their respective owners.
+
+No general trademark license is granted.
+
+You may not use these names or associated logos as the primary brand
+of an unrelated product, service, or application without written
+permission from the applicable rights holder.
+
+Requests for written permission should be sent to hello@antranik.dev.
+
+Limited use of the Pixelian name is permitted when necessary to:
+
+  a. Identify the original Software.
+  b. Fulfill the attribution requirements in section 2.
+  c. Preserve the Software's name under section 4.
+  d. Truthfully describe compatibility with or derivation from
+     the Software.
+
+An unofficial fork may use the Pixelian name as part of its required
+framework identification, provided it is clearly identified as
+unofficial and does not impersonate the official project.
+
+Such permitted identification does not grant permission to use
+official project logos, falsely claim endorsement, or present a
+modified distribution as an official Pixelian release.
 
 
-6. CONDITIONS AND CURE
+     RESERVED AUTHOR ATTRIBUTION
 
-The permissions in section 1 are granted only if you comply with all
-terms of this license. If you fail to comply, your license to the
+     The following phrases are reserved for projects authored by
+     Antranik Agopian or created under his direct supervision:
+
+       "Powered by Antranik.dev"
+       "Built by Antranik.dev"
+
+     Close variants that imply the same authorship or supervision
+     are also reserved.
+
+     Third parties may not display these phrases on applications
+     not authored or directly supervised by Antranik Agopian without
+     written permission.
+
+     Crediting Antranik Agopian as the original author of Pixelian
+     is expressly permitted.
+
+     Such credit must not imply that he authored, approved, maintained,
+     or supervised the third-party application.
+
+
+     ATTRIBUTION IS NOT ENDORSEMENT
+
+     The attribution required by section 2 identifies the Software's
+     origin only.
+
+     It does not represent endorsement, partnership, certification,
+     sponsorship, or authorship of the application by the copyright
+     holder.
+
+
+     TRANSFER OF OWNERSHIP
+
+     The copyright holder may transfer or assign the Software's
+     copyrights and associated trademark rights to a successor
+     entity, including a company established to maintain Pixelian.
+
+     Such a transfer does not invalidate existing license grants.
+
+     The successor takes ownership subject to existing permissions
+     granted under this license and may enforce the applicable
+     attribution, copyright, and trademark conditions.
+
+
+6. CONDITIONS, TERMINATION, AND CURE
+
+The permissions granted by this license remain effective only while
+the licensee complies with its conditions.
+
+If a licensee violates the applicable terms, the license to the
 Software terminates automatically.
 
-If you become aware of a breach, you may regain the license by curing
-the breach within 30 days. Curing means taking concrete steps to
-address the specific non-compliance, such as restoring a removed
-attribution, renaming a fork back to "Pixelian", removing a trademark
-from a product brand, or switching the footer from "Powered by" to
-"Extends" after a code modification. Repeated breaches, or breaches
-committed in bad faith after the cure period has been used once, are
-not eligible for a second cure.
+A licensee who becomes aware of a violation may restore compliance
+by curing the violation within 30 days of:
+
+  a. First becoming aware of the violation; or
+  b. Receiving written notice identifying the violation;
+
+whichever occurs first.
+
+Curing a violation means taking reasonable and concrete steps to
+resolve the specific non-compliance.
+
+Examples include:
+
+  - Restoring missing copyright or license notices.
+  - Restoring removed Pixelian attribution.
+  - Replacing "Powered by Pixelian.dev" with
+    "Extends Pixelian.dev" after code modification.
+  - Adding omitted "@modified-by" annotations.
+  - Correcting an improperly renamed fork.
+  - Removing misleading trademarks or branding.
+  - Removing claims of official endorsement or authorship.
+
+If an eligible violation is fully cured within the permitted period,
+the license is automatically reinstated upon completion of the cure.
+
+Reinstatement does not automatically waive liability for violations
+that occurred before the cure.
+
+A repeated violation of substantially the same obligation following
+a previous cure, or a deliberate violation involving concealment,
+misrepresentation, or bad faith, is not eligible for automatic
+reinstatement.
+
+In such cases, reinstatement requires express written permission
+from the copyright holder.
+
+A separate, unintentional violation of a different obligation may
+qualify for its own cure period.
+
+The copyright holder may grant additional reinstatement rights in
+writing at their discretion.
 
 
 7. NO WARRANTY
@@ -142,36 +423,128 @@ not eligible for a second cure.
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN
-ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+NONINFRINGEMENT.
+
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+THESE LIMITATIONS APPLY TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE
+LAW.
 
 
 8. THIRD-PARTY COMPONENTS
 
-The Software loads Font Awesome 6.5.0 (Free) via CDN. Font Awesome is
-licensed separately under SIL OFL 1.1, MIT, and CC BY 4.0, and is not
-covered by this license. See GUIDE.md section 11 for details.
+The Software loads Font Awesome 6.5.0 (Free) via CDN.
+
+Font Awesome components are licensed separately under their applicable
+licenses, including:
+
+  - SIL Open Font License 1.1
+  - MIT License
+  - Creative Commons Attribution 4.0
+
+These components are not covered by the Pixelian License.
+
+Their original licenses, copyright notices, and applicable attribution
+requirements remain in effect.
+
+See GUIDE.md section 11 for additional information.
+
+Other third-party dependencies incorporated into future versions of
+Pixelian remain governed by their respective licenses unless expressly
+stated otherwise.
 
 
 9. DEFINITIONS
 
-"Software" means the source code, stylesheets, data files, and
-documentation distributed by Antranik Agopian under the Pixelian 
-name.
+"Software"
 
-"Application" means any software product built using the Software,
-including websites and web applications that incorporate the
-Software's modules or core primitives.
+Means the original source code, stylesheets, data files, and
+documentation distributed by Antranik Agopian under the Pixelian name
+and made available at pixelian.dev, including protected portions
+incorporated into modified versions.
 
-"Modify" means to add to, remove from, or change the contents of any
-file that ships with the Software. Adding new files without editing
-shipped files is not modification.
 
-"Fork" means a copy of the Software distributed under a new repository
-or a modified version distributed under the same name.
+"Application"
+
+Means a website, web application, or other software product built
+using the Software, whose primary purpose is to provide application
+functionality rather than redistribute Pixelian as a reusable
+framework, frontend template, boilerplate, or starter kit.
+
+
+"Original Code File"
+
+Means an executable source file originally distributed with the
+Software, including JavaScript, CSS, PHP, and other source files
+containing the Software's implementation.
+
+
+"Code Modification"
+
+Means changing, removing, replacing, or adapting original Pixelian
+code, including modifications made to copied portions of that code.
+
+Code Modifications include changes to original source files even
+when the resulting behavior remains substantially the same.
+
+Adding independently authored files without changing or adapting
+original Pixelian code is not a Code Modification.
+
+
+"Configuration Change"
+
+Means editing configuration, metadata, or application-specific data
+without changing original Pixelian executable code.
+
+Configuration Changes include edits to data/*.json, robots.txt,
+sitemap.xml, site.webmanifest, and placeholder substitutions
+performed by setup.sh.
+
+Configuration Changes do not trigger the modified attribution tier.
+
+
+"Modify"
+
+Means to change, remove, replace, or add to the contents of any file
+originally distributed with the Software.
+
+Not every modification is a Code Modification.
+
+Configuration Changes and changes to non-code documentation may be
+modifications in the general sense but are excluded from the
+modified-code attribution tier.
+
+
+"Fork"
+
+Means a separately maintained or redistributed copy of the Software,
+whether modified or unmodified, that is distributed as a reusable
+framework, frontend template, boilerplate, or starter kit.
+
+A fork remains subject to the name-preservation and attribution
+requirements of this license.
+
+
+"Substantial Portion"
+
+Means original Pixelian code, styles, layouts, modules, or primitives
+incorporated into another product in a manner that plays a material
+functional or structural role.
+
+An isolated, incidental code fragment does not automatically
+constitute a substantial portion.
+
+
+"Official Pixelian"
+
+Means the version of the Software released or expressly designated
+as official by the copyright holder or an authorized successor.
+
+Independent forks are not official releases unless expressly
+authorized in writing.
 
 
 END OF TERMS

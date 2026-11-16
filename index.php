@@ -7,13 +7,94 @@
  *
  * Attribution lives here once. Section markers inside the file
  * (MODULE CONFIG, RESOLVE ACTIVE MODULES, Inline module data) do not
- * carry their own @copyright/@author - see GUIDE.md.
+ * carry their own @copyright/@license/@author - see GUIDE.md.
  *
- * @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
+ * Card is the shipped default module. data/modules.json ships with
+ * ["card"], and the fallback below is ["card"] so a fresh clone
+ * always renders something.
+ *
+ * @copyright Copyright (c) 2026 Antranik Agopian
+ * @license Pixelian License (see LICENSE)
  * @author Antranik Agopian <hello@antranik.dev>
  */
 
 header('Content-Type: text/html; charset=utf-8');
+
+/* HELPERS */
+
+/**
+ * Compute the column and row count for a flat pixel pattern.
+ * Mirrored in js/core/utils.js -> computePixelLayout.
+ *
+ * Override rule (takes priority when $override > 0):
+ *   cols = $override, rows = ceil(len / override)
+ *
+ * Heuristic (no override):
+ *   1. Perfect square (n*n, n <= 16): cols = rows = sqrt(n)
+ *   2. Multiple of 7 with n > 7: cols = 7, rows = n / 7
+ *   3. n <= 7: cols = n, rows = 1
+ *   4. Fallback: cols = 7, rows = ceil(n / 7)
+ *
+ * The override handles pattern lengths the heuristic cannot express
+ * cleanly (8, 10, 11, 13, ...). Absent -> heuristic runs.
+ *
+ * @param int $len      Flat pattern length.
+ * @param int $override Optional column override. Zero or less means
+ *                      the heuristic runs.
+ * @return array{0:int, 1:int} Tuple [cols, rows].
+ */
+function computePixelLayout(int $len, int $override = 0): array {
+    if ($override > 0) {
+        return [$override, max(1, (int) ceil($len / $override))];
+    }
+    $sqrt = (int) round(sqrt($len));
+    if ($sqrt > 0 && $sqrt * $sqrt === $len && $sqrt <= 16) {
+        return [$sqrt, $sqrt];
+    }
+    if ($len > 7 && $len % 7 === 0) {
+        return [7, intdiv($len, 7)];
+    }
+    if ($len <= 7) {
+        return [$len, 1];
+    }
+    return [7, (int) ceil($len / 7)];
+}
+
+/* CORE VERSION
+   Read CORE_VERSION from js/core/config.js so the generator meta tag
+   stays in sync without editing index.php on every release. */
+$coreConfigPath = __DIR__ . '/js/core/config.js';
+$coreVersion = '0.0.0';
+if (is_readable($coreConfigPath)) {
+    $raw = file_get_contents($coreConfigPath);
+    if (preg_match("/CORE_VERSION\s*=\s*'([^']+)'/", $raw, $m)) {
+        $coreVersion = $m[1];
+    }
+}
+
+/* SITE DATA
+   Read data/site.json once so SITE_CONFIG and the no-JS grid share
+   the same pixel pattern. Modules read the same field via
+   window.__SITE_DATA__ (set by app.js from the inlined data-site
+   script). One source, one edit to change the pattern everywhere.
+
+   Layout (columns, rows) comes from computePixelLayout above. The
+   optional data/site.json -> pixelCols field overrides the heuristic
+   for pattern lengths the heuristic cannot express cleanly. */
+$siteDataPath = __DIR__ . '/data/site.json';
+$siteData = [];
+if (is_readable($siteDataPath)) {
+    $parsed = json_decode(file_get_contents($siteDataPath), true);
+    if (is_array($parsed)) $siteData = $parsed;
+}
+
+$pixelPattern = is_array($siteData['pixelPattern'] ?? null) && count($siteData['pixelPattern']) > 0
+    ? array_values(array_map('intval', $siteData['pixelPattern']))
+    : [1, 1, 1, 1, 1, 1, 1];
+
+$pixelLen = count($pixelPattern);
+$pixelColsOverride = isset($siteData['pixelCols']) ? (int) $siteData['pixelCols'] : 0;
+[$pixelCols, $pixelRows] = computePixelLayout($pixelLen, $pixelColsOverride);
 
 /* MODULE CONFIG
    Active modules are read from data/modules.json (overridden per
@@ -32,7 +113,7 @@ header('Content-Type: text/html; charset=utf-8');
 
    Every name must correspond to js/modules/{name}/manifest.js.
    Unknown names are skipped. Missing file falls back to ["card"].
-   dd a module: see GUIDE.md, Add / Remove a Module. */
+   Add a module: see GUIDE.md, Add / Remove a Module. */
 
 /* RESOLVE ACTIVE MODULES
    Read data/modules.json (Pixelian default, overridden per deployment).
@@ -68,6 +149,7 @@ foreach ($rawModules as $entry) {
     <meta name="keywords" content="YourKeywords" />
     <meta name="author" content="YourAuthor" />
     <meta name="robots" content="index, follow" />
+    <meta name="generator" content="Pixelian <?php echo htmlspecialchars($coreVersion, ENT_QUOTES); ?>" />
     <link rel="canonical" href="https://YourDomain" />
 
     <!-- Open Graph -->
@@ -162,6 +244,16 @@ foreach ($activeModules as $name) {
             --site-accent-light: #0066cc;
             --site-text-shadow: #aaaaaa;
             --site-pixel-size: 2.4rem;
+
+            /* Brand underline. Dash count follows the pixel pattern
+               column count so the underline and the pattern share a
+               shape. Set from data/site.json -> pixelPattern at
+               request time (see the SITE DATA block in index.php).
+               Dash = 2/7em, gap = 1/7em, both exact via calc(). */
+            --site-underline-dashes: <?php echo (int) $pixelCols; ?>;
+            --site-underline-dash: calc(2em / 7);
+            --site-underline-gap: calc(1em / 7);
+
             --site-gap: 1rem;
             --site-radius-sm: 0.25rem;
             --site-radius-md: 0.375rem;
@@ -306,19 +398,24 @@ foreach ($activeModules as $name) {
             border-bottom: none;
         }
 
-        /* Dashed underline centered on the brand text. */
+        /* Dashed underline centered on the brand text. Dash count
+           matches the pixel column count from data/site.json ->
+           pixelPattern. */
         header .brand h1::after {
             content: '';
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
             bottom: 0;
-            width: 36%;
+            width: calc(
+                var(--site-underline-dashes) * var(--site-underline-dash)
+                + (var(--site-underline-dashes) - 1) * var(--site-underline-gap)
+            );
             height: 2px;
             background: repeating-linear-gradient(
                 to right,
-                var(--site-accent) 0 0.2857em,
-                transparent 0.2857em 0.4286em
+                var(--site-accent) 0 var(--site-underline-dash),
+                transparent var(--site-underline-dash) calc(var(--site-underline-dash) + var(--site-underline-gap))
             );
         }
 
@@ -563,7 +660,7 @@ foreach ($activeModules as $name) {
             margin-bottom: 0.3rem;
         }
 
-        footer .legal .powered-by a {
+        footer .legal .legal-attribution a {
             color: inherit;
             text-decoration: none;
             padding-bottom: 0.125rem;
@@ -571,7 +668,7 @@ foreach ($activeModules as $name) {
             pointer-events: auto;
         }
 
-        footer .legal .powered-by a:hover {
+        footer .legal .legal-attribution a:hover {
             color: var(--site-accent);
             text-shadow: 0 0 6px var(--site-accent);
             background-image: repeating-linear-gradient(
@@ -601,7 +698,12 @@ foreach ($activeModules as $name) {
          browser ignores this entire block when JS is on. Hides the
          loader (which never receives .hidden) and shows the fallback
          card. Structure mirrors the site card pattern and the
-         siteShowError overlay. -->
+         siteShowError overlay.
+
+         The pixel grid dimensions and filled cells are generated from
+         data/site.json -> pixelPattern by the PHP above. Change the
+         pattern once, both the runtime error overlay and this no-JS
+         card follow. -->
     <noscript>
         <style>
             #siteLoader { display: none !important; }
@@ -653,8 +755,8 @@ foreach ($activeModules as $name) {
 
             .no-js-pixel-grid {
                 display: grid;
-                grid-template-columns: repeat(7, 1rem);
-                grid-template-rows: repeat(4, 1rem);
+                grid-template-columns: repeat(<?php echo (int) $pixelCols; ?>, 1rem);
+                grid-template-rows: repeat(<?php echo (int) $pixelRows; ?>, 1rem);
                 gap: 0;
             }
 
@@ -745,48 +847,20 @@ foreach ($activeModules as $name) {
          Replace "YourEmail" below with your contact. setup.sh replaces
          it with an entity-encoded form (&#64;, &#46;) that defeats
          scrapers that grep for plaintext; manual replacement with a
-         plain address works but is not obfuscated.
-         Pixel pattern mirrors SITE_CONFIG.errorPixelPattern; if you
-         change one, change both. -->
+         plain address works but is not obfuscated. -->
     <div class="no-js-backdrop">
         <div class="core-panel panel-dark no-js-card">
             <div class="core-panel-content">
 
-                <!-- CANVAS -->
+                <!-- CANVAS. Cells are generated from data/site.json
+                     pixelPattern by the PHP above. Changing the
+                     pattern in that file updates both this card and
+                     the runtime error overlay. -->
                 <div class="no-js-canvas" aria-hidden="true">
                     <div class="no-js-pixel-grid">
-                        <!-- Row 1 -->
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell" data-filled></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <!-- Row 2 -->
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell" data-filled></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell" data-filled></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <!-- Row 3 -->
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell" data-filled></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell" data-filled></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <!-- Row 4 -->
-                        <div class="no-js-pixel-cell" data-filled></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell"></div>
-                        <div class="no-js-pixel-cell" data-filled></div>
+<?php foreach ($pixelPattern as $bit): ?>
+                        <div class="no-js-pixel-cell"<?php echo $bit ? ' data-filled' : ''; ?>></div>
+<?php endforeach; ?>
                     </div>
                 </div>
 
@@ -830,8 +904,10 @@ foreach ($activeModules as $name) {
  */
 
 /* INLINE HELPER
-   Emits one inline <script> tag for a JSON file. No-op if missing. */
-function inline_json($path, $id) {
+   Emits one inline <script> tag for a JSON file. No-op if missing.
+   camelCase to match the JS side (urlToInlineId) and the other PHP
+   helper in this file (computePixelLayout). */
+function inlineJson($path, $id) {
     if (!is_readable($path)) return;
     $raw = file_get_contents($path);
     $raw = str_replace('{year}', date('Y'), $raw);
@@ -841,20 +917,20 @@ function inline_json($path, $id) {
 }
 
 /* CORE DATA - always inlined */
-inline_json(__DIR__ . '/data/site.json',    'site');
-inline_json(__DIR__ . '/data/modules.json', 'modules');
+inlineJson(__DIR__ . '/data/site.json',    'site');
+inlineJson(__DIR__ . '/data/modules.json', 'modules');
 
 /* MODULE DATA - inline for each active module
    Flat:   data/<name>.json      -> data-<name>
    Subdir: data/<name>/*.json    -> data-<name>-<basename> */
 foreach ($activeModules as $name) {
-    inline_json(__DIR__ . '/data/' . $name . '.json', $name);
+    inlineJson(__DIR__ . '/data/' . $name . '.json', $name);
 
     $subdir = __DIR__ . '/data/' . $name;
     if (is_dir($subdir)) {
         foreach (glob($subdir . '/*.json') ?: [] as $file) {
             $basename = basename($file, '.json');
-            inline_json($file, $name . '-' . $basename);
+            inlineJson($file, $name . '-' . $basename);
         }
     }
 }
@@ -884,12 +960,15 @@ foreach ($activeModules as $name) {
     </main>
 
     <!-- FOOTER. .taskbar mounts the taskbar; .legal is a fallback,
-         app.js replaces its content from site.json. -->
+         app.js replaces its content from site.json. The attribution
+         line ships as "Powered by Pixelian.dev" (unmodified tier);
+         switch to "Extends Pixelian.dev" if you edit a shipped code
+         file. See LICENSE section 2.d. -->
     <footer>
         <div class="taskbar"></div>
         <div class="legal">
             <div class="copyright" style="display:none">&copy; <?php echo date('Y'); ?> YourProject&trade;</div>
-            <div class="powered-by" style="display:none">Powered by <a href="https://antranik.dev" target="_blank" rel="noopener">Antranik.dev</a></div>
+            <div class="legal-attribution" style="display:none">Powered by <a href="https://pixelian.dev" target="_blank" rel="noopener">Pixelian.dev</a></div>
         </div>
     </footer>
 
@@ -918,16 +997,15 @@ foreach ($activeModules as $name) {
                 tagline: 'YourTagline',
                 enableSiteLoader: true,
 
-                /* Error pixel grid. Pattern length must be a multiple of
-                   errorPixelCols. no-JS fallback hardcodes the same
-                   pattern via data-filled markers; keep them in sync. */
-                errorPixelCols: 7,
-                errorPixelPattern: [
-                    0,0,0,1,0,0,0,
-                    0,0,1,0,1,0,0,
-                    0,1,0,0,0,1,0,
-                    1,0,0,0,0,0,1
-                ],
+                /* Pixel pattern. Read from data/site.json at request
+                   time and shared by the error overlay fallback, the
+                   no-JS fallback, and every module that renders the
+                   pixel pattern (via window.__SITE_DATA__). Layout
+                   (cols) is computed server-side from the pattern
+                   length. */
+                pixelCols: <?php echo (int) $pixelCols; ?>,
+                pixelPattern: <?php echo json_encode($pixelPattern); ?>,
+
                 errorMessages: {
                     '400': 'Bad request. Please check the URL and try again.',
                     '401': 'Unauthorized. You need to log in to access this page.',
@@ -937,7 +1015,13 @@ foreach ($activeModules as $name) {
                 },
                 errorContainer: 'main',
 
-                loaderPixelCount: 7
+                /* Boot loader animation. Number of pixels in the
+                   horizontal row that pulses while the page loads.
+                   Derived from $pixelCols at request time so the
+                   loader, brand underline, and pattern width always
+                   match. Floored at 3 so a very narrow pattern still
+                   reads as a horizontal row. */
+                loaderPixelCount: <?php echo max(3, (int) $pixelCols); ?>
             };
 
             window._siteErrorMessages = SITE_CONFIG.errorMessages;
@@ -995,9 +1079,9 @@ foreach ($activeModules as $name) {
                 const windowTaskbar = document.getElementById('windowTaskbar');
                 if (windowTaskbar) windowTaskbar.remove();
 
-                const pattern = SITE_CONFIG.errorPixelPattern;
-                const cols = Number.isInteger(SITE_CONFIG.errorPixelCols) && SITE_CONFIG.errorPixelCols > 0
-                    ? SITE_CONFIG.errorPixelCols
+                const pattern = SITE_CONFIG.pixelPattern;
+                const cols = Number.isInteger(SITE_CONFIG.pixelCols) && SITE_CONFIG.pixelCols > 0
+                    ? SITE_CONFIG.pixelCols
                     : 5;
                 const rows = Math.ceil(pattern.length / cols);
 

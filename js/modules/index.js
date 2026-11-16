@@ -29,7 +29,8 @@
  * it. app.js's static import of MODULE_LIST waits on this module's
  * top-level await, so no async syntax is needed in app.js.
  *
- * @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
+ * @copyright Copyright (c) 2026 Antranik Agopian
+ * @license Pixelian License (see LICENSE)
  * @author Antranik Agopian <hello@antranik.dev>
  */
 

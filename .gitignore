@@ -1,6 +1,6 @@
-# Pixelian template - files to keep out of version control.
-# Sections are grouped by source. Uncomment or extend as your project
-# adds new tooling (bundler, tests, etc.).
+# Version control ignores for this project.
+# Ships with the Pixelian template. Sections are grouped by source.
+# Extend as your project adds new tooling (bundler, tests, etc.).
 
 # OS
 .DS_Store

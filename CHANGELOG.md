@@ -2,7 +2,39 @@
 
 All notable changes to Pixelian are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
----
+## [1.3.0] - 2026-11-16
+
+Renames the license to the Pixelian License and rebrands external attribution to Pixelian.dev. Author and copyright holder are unchanged (Antranik Agopian). Existing `data/site.json` files require migration; the page fails loudly with steps if the file is missing `schemaVersion`.
+
+### Added
+
+- `schemaVersion` field in `data/site.json`. v1.3.0 expects `schemaVersion: 1`. Older configs (no field) fail the boot check with migration steps instead of silently hiding the attribution footer.
+- `CORE_SITE_DATA_SCHEMA` constant in `js/core/config.js`. Independent of `CORE_VERSION`, bumps only on shape changes.
+- `<meta name="generator">` in `index.php`, value read from `CORE_VERSION`. Tag stays in sync without manual edits.
+- `SECURITY.md` at the repo root. Reporting channel and supported versions.
+- `pixelCols` optional field in `data/site.json`. Overrides the auto-computed column count when a pattern length has no clean layout (8, 10, 11, 13, ...). When absent, the heuristic still runs (perfect square -> sqrt; multiple of 7 -> 7 columns; n <= 7 -> single row; fallback -> 7 columns).
+- `--site-underline-dashes`, `--site-underline-dash`, `--site-underline-gap` CSS variables in `index.php :root`. `--site-underline-dashes` is set from `$pixelCols` at request time; the dash width (`calc(2em / 7)`) and gap width (`calc(1em / 7)`) are static. The underline renders exactly `$pixelCols` dashes at any h1 width.
+
+### Changed
+
+- License renamed from Antranik License 1.0 to Pixelian License 1.0.
+- Runtime attribution now targets Pixelian.dev. `Powered by Pixelian.dev` (unmodified) and `Extends Pixelian.dev` (modified). `Powered by Antranik.dev` reserved for projects authored or directly supervised by Antranik Agopian.
+- Every shipped code file updates its header: `@copyright` line splits into two lines, `@copyright Copyright (c) 2026 Antranik Agopian` and `@license Pixelian License (see LICENSE)`. License version lives in `LICENSE` only.
+- `data/site.json -> poweredBy` renamed to `attribution`. `showPoweredBy` renamed to `showAttribution`. CSS class `.powered-by` renamed to `.legal-attribution`.
+- Boot logging consolidated into one summary after module inits settle. Core version line, then one table row per module (version, required core, init status, error). The top-level `getLoadedModules({ logToConsole: true })` call and the per-module `console.log` loop are removed. `window.getLoadedModules` stays available for on-demand inspection.
+- `fetchSiteData()` fallback in `core/utils.js` now returns a Pixelian-branded object, not a "YourProject" placeholder.
+- Pixel pattern unified. `data/site.json -> pixelPattern` is the single source for the error overlay fallback, no-JS fallback, brand underline dash count, and boot loader pixel count. Modules that render the pattern read it from `window.__SITE_DATA__.pixelPattern`. Column and row counts are auto-computed from pattern length via `computePixelLayout(pattern, overrideCols)` in `core/utils.js` (mirrored in `index.php`), with `data/site.json -> pixelCols` as an optional override.
+- `index.php` layout heuristic extracted to a `computePixelLayout($len, $override = 0)` PHP function, matching the JS export name and signature. The existing `inline_json` helper was renamed to `inlineJson` for the same reason: one camelCase convention across PHP and JS. Behavior is unchanged.
+- `SITE_CONFIG.errorPixelCols` renamed to `SITE_CONFIG.pixelCols`; `SITE_CONFIG.errorPixelPattern` renamed to `SITE_CONFIG.pixelPattern`. Same values, new names. Only impacts code that read the old fields directly.
+- `loaderPixelCount` in `SITE_CONFIG` is now derived from `data/site.json -> pixelPattern` column count (floored at 3), not hardcoded to 7. The same value drives the brand underline dash count and the boot loader, so the two elements always match the pattern width.
+- `computePixelLayout(pattern, overrideCols)` accepts an optional `overrideCols` argument. When passed a positive integer, it wins over the heuristic; rows are derived from `pattern.length / overrideCols`. Backward compatible: existing one-argument calls behave identically.
+
+### Notes
+
+- Migration from v1.2.x: add `"schemaVersion": 1`, rename `poweredBy` to `attribution`, rename `showPoweredBy` to `showAttribution`. The boot check enforces this.
+- Copyright holder and author unchanged: Antranik Agopian <hello@antranik.dev>.
+- `pixelian.dev` is now the official domain. `pixelian.net` reserved and covered by trademark.
+- Pixel pattern migration from v1.2.x: any module with its own pattern config must move to `data/site.json -> pixelPattern`. Optional: add `pixelCols` when the pattern length is not a perfect square, not a multiple of 7, or greater than 7. Both fields are read at request time by `index.php` for the no-JS grid and underline, and by `app.js` into `window.__SITE_DATA__` for module consumption.
 
 ## [1.2.2] - 2026-11-15
 
@@ -14,8 +46,6 @@ All notable changes to Pixelian are documented in this file. The format follows 
 
 - Stale `VERSION` export in `core/utils.js`. Unused, never updated past `'1.1.0'`, superseded by `CORE_VERSION` in `core/config.js`.
 
----
-
 ## [1.2.1] - 2026-11-15
 
 Boot log. Core and module versions are printed to the console on every page load, so the loaded surface is visible without a manual `getLoadedModules()` call.
@@ -24,8 +54,6 @@ Boot log. Core and module versions are printed to the console on every page load
 
 - Automatic `getLoadedModules({ logToConsole: true })` call in `js/app.js` after module registration.
 
----
-
 ## [1.2.0] - 2026-11-15
 
 Adds `waitForLoaderGone()` to `core/utils.js`: resolves when `#siteLoader` has fully faded out, no timeout.
@@ -33,8 +61,6 @@ Adds `waitForLoaderGone()` to `core/utils.js`: resolves when `#siteLoader` has f
 ### Added
 
 - `waitForLoaderGone()` in `core/utils.js`. Resolves when `#siteLoader` has fully faded out, with no safety timeout. Complements `waitForLoaderHidden()`, which keeps its 3-second safety timeout and is still available for callers that can tolerate resolving early. Modules whose next action is visible to the user (revealing content, starting an animation) should use `waitForLoaderGone` so they never run behind a still-visible loader on slow connections.
-
----
 
 ## [1.1.0] - 2026-11-12
 
@@ -76,8 +102,6 @@ Module placement moves to data. A deployment can now specify where each module's
 - `index.php` static shell unchanged: page meta, SITE_CONFIG, and inline CSS tokens stay hardcoded. Only the module normalization block changes; everything else in `index.php` is byte-identical.
 
 - Modules that do not need mount support continue to work without any update - `init(moduleData, mount = {})` is backward compatible.
-
----
 
 ## [1.0.0] - 2026-11-11
 
@@ -148,6 +172,8 @@ First public release.
 - Zero build step. ES modules and CSS load directly.
 - No path routing. Add your own resolver if you need deep-linking.
 - No server-side API. `core/api.js` is ready for your own `/api/*` endpoints.
+
+[1.3.0]: ../../compare/v1.2.2...v1.3.0
 
 [1.2.2]: ../../compare/v1.2.1...v1.2.2
 

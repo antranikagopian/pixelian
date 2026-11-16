@@ -17,7 +17,8 @@
  * Base URL is /api/. All errors return bare status codes (nginx config
  * ensures no 302 to HTML), so fetch can always parse the response.
  *
- * @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
+ * @copyright Copyright (c) 2026 Antranik Agopian
+ * @license Pixelian License (see LICENSE)
  * @author Antranik Agopian <hello@antranik.dev>
  */
 

@@ -1,9 +1,11 @@
 {
+    "schemaVersion": 1,
+    "pixelPattern": [1,1,1,1,1,1,1],
     "title": "YourProject",
     "tagline": "YourTagline",
     "showBrand": true,
     "showTagline": true,
     "copyright": "&copy; {year} YourCopyright",
-    "poweredBy": "Powered by <a href=\"https://antranik.dev\" target=\"_blank\" rel=\"noopener\">Antranik.dev</a>",
-    "showPoweredBy": true
+    "attribution": "Powered by <a href=\"https://pixelian.dev\" target=\"_blank\" rel=\"noopener\">Pixelian.dev</a>",
+    "showAttribution": true
 }

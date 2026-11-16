@@ -55,7 +55,8 @@
  *   `_onElementMouseDown` (focus on panel body click). Both are
  *   registered in the constructor and removed in `destroy()`.
  *
- * @copyright Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.
+ * @copyright Copyright (c) 2026 Antranik Agopian
+ * @license Pixelian License (see LICENSE)
  * @author Antranik Agopian <hello@antranik.dev>
  */
 
