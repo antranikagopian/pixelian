@@ -104,10 +104,8 @@ export function sanitizeHTML(html, rules = {}) {
                 node.removeAttribute(attr.name);
                 continue;
             }
-            /* URL protocol check for href. */
-            if (name === 'href') {
+            if (name === 'href' || name === 'src') {
                 const value = String(attr.value || '').trim().toLowerCase();
-                /* Anchors and relative paths always allowed. */
                 if (value.startsWith('#') || value.startsWith('/') ||
                     value.startsWith('./') || value.startsWith('../')) {
                     continue;
@@ -133,11 +131,7 @@ export function sanitizeHTML(html, rules = {}) {
        <div id="__sanitize_root"> we injected to give the parser a
        single container; it is not content and must not go through
        the unwrap path. Walking root itself would treat the wrapper
-       as a disallowed `div` and unwrap it - moving every child out
-       of root and leaving root.innerHTML === '' on return. This was
-       the bug that made every sanitizeHTML() call return an empty
-       string. Walking root's children preserves the wrapper and
-       returns the cleaned HTML. */
+       as a disallowed `div`, unwrap it, and return an empty string. */
     for (const child of Array.from(root.childNodes)) {
         walk(child);
     }

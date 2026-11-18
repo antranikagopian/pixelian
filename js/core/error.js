@@ -80,11 +80,12 @@ export class ErrorDialog {
      * @param {string|HTMLElement} [options.target='#module'] - Mount container.
      * @param {'panel'|'overlay'|Function} [options.mode='panel'] - Renderer.
      */
-    constructor({ target = '#module', mode = 'panel' } = {}) {
+    constructor({ target = '#module', mode = 'panel', panelId = 'error-dialog' } = {}) {
         this.container = typeof target === 'string'
             ? document.querySelector(target)
             : target;
         this.mode = mode;
+        this.panelId = panelId;
         this.panel = null;
         this.overlay = null;
         this._loaded = false;
@@ -136,7 +137,7 @@ export class ErrorDialog {
      * @param {string} message - Error message text.
      */
     async show(title, message) {
-        await this._ensureCSS();
+        try { await this._ensureCSS(); } catch { /* render degraded */ }
         this.hide();
 
         if (typeof this.mode === 'function') {
@@ -166,7 +167,7 @@ export class ErrorDialog {
         this.panel = new Panel({
             title: title || 'Error',
             icon: '!',
-            id: `error-${Date.now()}`,
+            id: this.panelId,
             draggable: true,
             showMinimize: false,
             showMaximize: false,
@@ -178,11 +179,14 @@ export class ErrorDialog {
 
         const msg = document.createElement('div');
         msg.className = 'module-error-message';
+        msg.setAttribute('role', 'alert');
         msg.textContent = message || 'An unexpected error occurred.';
         this.panel.appendContent(msg);
 
+        this.panel.element.setAttribute('tabindex', '-1');
         this.container.appendChild(this.panel.element);
         this.panel.mountWindow();
+        this.panel.element.focus();
     }
 
     /**
@@ -200,12 +204,12 @@ export class ErrorDialog {
         overlay.className = 'module-error-overlay';
 
         overlay.innerHTML = `
-            <div class="module-error-overlay-dialog" role="alertdialog" aria-modal="true">
+            <div class="module-error-overlay-dialog" role="alertdialog" aria-modal="true" aria-labelledby="module-error-title" aria-describedby="module-error-body" tabindex="-1">
                 <div class="module-error-overlay-header">
-                    <span class="module-error-overlay-title"></span>
+                    <span class="module-error-overlay-title" id="module-error-title"></span>
                     <button class="module-error-overlay-close" type="button" aria-label="Close">&times;</button>
                 </div>
-                <div class="module-error-overlay-body"></div>
+                <div class="module-error-overlay-body" id="module-error-body"></div>
             </div>
         `;
 
@@ -220,6 +224,7 @@ export class ErrorDialog {
         });
 
         document.body.appendChild(overlay);
+        overlay.querySelector('.module-error-overlay-dialog').focus();
         this.overlay = overlay;
     }
 
@@ -274,7 +279,11 @@ export function showUrlErrorDialog(code, messages = {}, { target = '#module' } =
     if (!code) return;
 
     if (!_urlErrorDialog) {
-        _urlErrorDialog = new ErrorDialog({ target, mode: 'panel' });
+        _urlErrorDialog = new ErrorDialog({
+            target,
+            mode: 'panel',
+            panelId: 'error-dialog-url'
+        });
     }
 
     const message = messages[code] || 'An unexpected error occurred.';

@@ -229,6 +229,9 @@
     background: var(--theme-toggle-bg);
     color: var(--site-accent);
 }
+.theme-option:focus-visible {
+    outline-offset: -0.125rem;
+}
 
 .theme-option[aria-selected="true"],
 .theme-option.selected {

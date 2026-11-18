@@ -1,45 +1,45 @@
 # Security Policy
 
-> Last updated: `20261116`
-
 ## Reporting a Vulnerability
 
-Email [hello@antranik.dev](mailto:hello@antranik.dev) with the subject "Pixelian security" and include:
+If you discover a security vulnerability in Pixelian, email [hello@antranik.dev](mailto:hello@antranik.dev) with the subject "Pixelian Security".
 
-- A description of the vulnerability
-- Steps to reproduce
-- The Pixelian version (`CORE_VERSION` from `js/core/config.js`, or check the `<meta name="generator">` tag)
-- Any suggested mitigation
+Please include:
 
-Do not open a public GitHub issue for security reports.
+- A description of the issue and its potential impact.
+- Steps to reproduce it, including a proof of concept if available.
+- The affected Pixelian version (see `CORE_VERSION` in `js/core/config.js` or the page's `generator` meta tag).
+- Any suggested mitigation or fix.
+
+Do not open a public GitHub issue or disclose the vulnerability publicly before it has been reviewed.
 
 ## Supported Versions
 
-The latest minor release receives security fixes. Older minors are unsupported.
+Security fixes are provided for the latest supported minor release.
 
 | Version | Supported |
 | ------- | --------- |
-| 1.3.x   | Yes       |
-| 1.2.x   | No        |
-| < 1.2   | No        |
+| `2.x`   | Yes       |
+| `1.x`   | No        |
 
 ## Scope
 
-Pixelian is a template, not an application. Security issues in the template itself are in scope:
+Security issues in Pixelian's shipped template are in scope, including:
 
-- Core primitives (`js/core/*.js`)
-- The PHP entry point (`index.php`)
-- The reference nginx config (`nginx.example.conf`)
-- The reference shell script (`setup.sh`)
+- Core code in `js/core/`.
+- The PHP entry point (`index.php`).
+- The reference nginx configuration (`nginx.example.conf`).
+- The setup script (`setup.sh`).
 
-Out of scope:
+The following are outside the scope of this policy:
 
-- Vulnerabilities in applications built on top of Pixelian
-- Vulnerabilities in modules added by the deploying project
-- Issues in third-party services linked from the template
-- Social engineering
-- Denial of service through resource exhaustion
+- Vulnerabilities introduced by applications built with Pixelian.
+- Custom modules or backend services added by a project.
+- Social engineering.
+- Denial of service caused solely by resource exhaustion.
 
 ## Response
 
-Reports are acknowledged within 7 days. Fixes are released as a patch (PATCH version bump) and credited in `CHANGELOG.md` unless the reporter requests anonymity.
+Reports are acknowledged within 7 days. Confirmed issues are addressed in patch releases when a fix is available and documented in [CHANGELOG](CHANGELOG.md).
+
+Reporters are credited unless they request anonymity.

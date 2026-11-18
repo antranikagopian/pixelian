@@ -1,177 +1,154 @@
 # Changelog
 
-All notable changes to Pixelian are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+All notable changes to Pixelian are documented in this file.
 
-## [1.3.0] - 2026-11-16
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0).
+Releases follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Renames the license to the Pixelian License and rebrands external attribution to Pixelian.dev. Author and copyright holder are unchanged (Antranik Agopian). Existing `data/site.json` files require migration; the page fails loudly with steps if the file is missing `schemaVersion`.
+## [Unreleased]
+
+## [2.0.0] - 2026-11-18
 
 ### Added
 
-- `schemaVersion` field in `data/site.json`. v1.3.0 expects `schemaVersion: 1`. Older configs (no field) fail the boot check with migration steps instead of silently hiding the attribution footer.
-- `CORE_SITE_DATA_SCHEMA` constant in `js/core/config.js`. Independent of `CORE_VERSION`, bumps only on shape changes.
-- `<meta name="generator">` in `index.php`, value read from `CORE_VERSION`. Tag stays in sync without manual edits.
-- `SECURITY.md` at the repo root. Reporting channel and supported versions.
-- `pixelCols` optional field in `data/site.json`. Overrides the auto-computed column count when a pattern length has no clean layout (8, 10, 11, 13, ...). When absent, the heuristic still runs (perfect square -> sqrt; multiple of 7 -> 7 columns; n <= 7 -> single row; fallback -> 7 columns).
-- `--site-underline-dashes`, `--site-underline-dash`, `--site-underline-gap` CSS variables in `index.php :root`. `--site-underline-dashes` is set from `$pixelCols` at request time; the dash width (`calc(2em / 7)`) and gap width (`calc(1em / 7)`) are static. The underline renders exactly `$pixelCols` dashes at any h1 width.
+- Support for named pixel patterns with configurable layouts and optional contexts.
+- Server-side pixel pattern normalization, validation, and fallback handling.
+- HTTP `413` and `429` error messages.
+- Reusable dashed labels and `ThemeSelector.destroy()` for listener cleanup.
+- Accessibility improvements for keyboard focus, screen readers, dialogs, and reduced motion.
 
 ### Changed
 
-- License renamed from Antranik License 1.0 to Pixelian License 1.0.
-- Runtime attribution now targets Pixelian.dev. `Powered by Pixelian.dev` (unmodified) and `Extends Pixelian.dev` (modified). `Powered by Antranik.dev` reserved for projects authored or directly supervised by Antranik Agopian.
-- Every shipped code file updates its header: `@copyright` line splits into two lines, `@copyright Copyright (c) 2026 Antranik Agopian` and `@license Pixelian License (see LICENSE)`. License version lives in `LICENSE` only.
-- `data/site.json -> poweredBy` renamed to `attribution`. `showPoweredBy` renamed to `showAttribution`. CSS class `.powered-by` renamed to `.legal-attribution`.
-- Boot logging consolidated into one summary after module inits settle. Core version line, then one table row per module (version, required core, init status, error). The top-level `getLoadedModules({ logToConsole: true })` call and the per-module `console.log` loop are removed. `window.getLoadedModules` stays available for on-demand inspection.
-- `fetchSiteData()` fallback in `core/utils.js` now returns a Pixelian-branded object, not a "YourProject" placeholder.
-- Pixel pattern unified. `data/site.json -> pixelPattern` is the single source for the error overlay fallback, no-JS fallback, brand underline dash count, and boot loader pixel count. Modules that render the pattern read it from `window.__SITE_DATA__.pixelPattern`. Column and row counts are auto-computed from pattern length via `computePixelLayout(pattern, overrideCols)` in `core/utils.js` (mirrored in `index.php`), with `data/site.json -> pixelCols` as an optional override.
-- `index.php` layout heuristic extracted to a `computePixelLayout($len, $override = 0)` PHP function, matching the JS export name and signature. The existing `inline_json` helper was renamed to `inlineJson` for the same reason: one camelCase convention across PHP and JS. Behavior is unchanged.
-- `SITE_CONFIG.errorPixelCols` renamed to `SITE_CONFIG.pixelCols`; `SITE_CONFIG.errorPixelPattern` renamed to `SITE_CONFIG.pixelPattern`. Same values, new names. Only impacts code that read the old fields directly.
-- `loaderPixelCount` in `SITE_CONFIG` is now derived from `data/site.json -> pixelPattern` column count (floored at 3), not hardcoded to 7. The same value drives the brand underline dash count and the boot loader, so the two elements always match the pattern width.
-- `computePixelLayout(pattern, overrideCols)` accepts an optional `overrideCols` argument. When passed a positive integer, it wins over the heuristic; rows are derived from `pattern.length / overrideCols`. Backward compatible: existing one-argument calls behave identically.
-
-### Notes
-
-- Migration from v1.2.x: add `"schemaVersion": 1`, rename `poweredBy` to `attribution`, rename `showPoweredBy` to `showAttribution`. The boot check enforces this.
-- Copyright holder and author unchanged: Antranik Agopian <hello@antranik.dev>.
-- `pixelian.dev` is now the official domain. `pixelian.net` reserved and covered by trademark.
-- Pixel pattern migration from v1.2.x: any module with its own pattern config must move to `data/site.json -> pixelPattern`. Optional: add `pixelCols` when the pattern length is not a perfect square, not a multiple of 7, or greater than 7. Both fields are read at request time by `index.php` for the no-JS grid and underline, and by `app.js` into `window.__SITE_DATA__` for module consumption.
-
-## [1.2.2] - 2026-11-15
+- **Breaking:** Upgrade site data schema to `2`, replacing `pixelPattern` and `pixelCols` with `pixelPatterns` in configuration and JavaScript APIs.
+- Update pixel pattern fallbacks to support the new schema.
+- Move error overlay and no-JavaScript labels between the canvas and message.
+- Improve focus indicators with full-opacity theme accents and 3:1 contrast.
+- Restructure documentation into a `GUIDE.md` index and focused `docs/` files.
+- Simplify `README.md` and update supported versions in `SECURITY.md`.
+- Update Pixelian License to `1.1` to reflect the removal of third-party dependencies and revised documentation references, without changing licensing terms.
+- Clarify configuration and API error documentation.
+- Replace the Font Awesome CDN dependency with locally defined icons in `js/core/icons.js` and module-specific `icons.js` files.
 
 ### Fixed
 
-- `CORE_VERSION` in `core/config.js` synced with the release tag. v1.2.1 shipped with `1.2.0` in the file, so the boot log and `getLoadedModules()` reported the wrong core version.
+- Schema migration dialog displaying incorrect content.
+- Error overlay failing to render when CSS loading fails.
+- URL-triggered errors being masked by application initialization failures.
+- Error dialog ID collisions affecting localStorage.
+- Version detection failing with double-quoted values.
+- Inline JSON escaping allowing premature script termination.
+- Incorrect pixel pattern gating and inconsistent layout calculations between PHP and JavaScript.
+- Unhandled PHP file reading failures.
+- Duplicate module names and reserved name conflicts.
+- Incorrect loader delay units.
+- CSRF cookie truncation and incomplete CSRF request headers.
+- HTML response detection missing proxy-generated fragments.
+- HTML sanitization allowing unsafe image source protocols.
+- Incorrect text truncation, message formatting, and URL normalization.
+- Panel icon updates and window mounting issues.
+- Window resize-handle cleanup and invalid saved state restoration.
+- Minimized windows incorrectly reporting as visible.
+- Hidden windows losing their positions during viewport resizing.
+- Ineffective theme manager listeners and incomplete theme selector cleanup, including orphaned portals.
+- Outdated license attribution in `css/card.css`.
+- Missing event import causing window title updates to fail.
 
-### Removed
-
-- Stale `VERSION` export in `core/utils.js`. Unused, never updated past `'1.1.0'`, superseded by `CORE_VERSION` in `core/config.js`.
-
-## [1.2.1] - 2026-11-15
-
-Boot log. Core and module versions are printed to the console on every page load, so the loaded surface is visible without a manual `getLoadedModules()` call.
-
-### Added
-
-- Automatic `getLoadedModules({ logToConsole: true })` call in `js/app.js` after module registration.
-
-## [1.2.0] - 2026-11-15
-
-Adds `waitForLoaderGone()` to `core/utils.js`: resolves when `#siteLoader` has fully faded out, no timeout.
-
-### Added
-
-- `waitForLoaderGone()` in `core/utils.js`. Resolves when `#siteLoader` has fully faded out, with no safety timeout. Complements `waitForLoaderHidden()`, which keeps its 3-second safety timeout and is still available for callers that can tolerate resolving early. Modules whose next action is visible to the user (revealing content, starting an animation) should use `waitForLoaderGone` so they never run behind a still-visible loader on slow connections.
-
-## [1.1.0] - 2026-11-12
-
-Module placement moves to data. A deployment can now specify where each module's element is inserted without editing code.
+## [1.3.0] - 2026-11-16
 
 ### Added
 
-- `data/modules.json` accepts two entry forms, mixed freely:
-  
-  - **Strings** - `["card", "module-a"]`. Mount defaults: target `'#module'`, position `'first'`.
-  - **Objects** - `[{ "name": "card", "target": "#module", "position": "first" }]`. Explicit mount config per module.
-
-- `js/modules/index.js` attaches a `mount: { target, position }` object to each loaded module descriptor, based on the manifest entry.
-
-- `manifest.init(moduleData, mount)` - second argument carries the resolved mount config. Optional; modules that ignore it continue to work unchanged.
+- Site data schema validation with required `schemaVersion: 1`.
+- Independent `CORE_SITE_DATA_SCHEMA` versioning for configuration changes.
+- Automatic core version detection for generator metadata.
+- `SECURITY.md` with vulnerability reporting and supported versions.
+- Optional `pixelCols` override for custom pixel layouts.
+- Configurable underline dash variables for responsive pixel patterns.
 
 ### Changed
 
-- `app.js` passes `mod.mount` as the second argument to `mod.init()`.
+- Rename Antranik License to Pixelian License `1.0`.
+- Update attribution to `Powered by Pixelian.dev` or `Extends Pixelian.dev`, depending on modifications.
+- **Breaking:** Rename `poweredBy` and `showPoweredBy` to `attribution` and `showAttribution`.
+- Rename `.powered-by` to `.legal-attribution`.
+- **Breaking:** Consolidate pixel configuration into `pixelPattern` and `pixelCols`, replacing `errorPixelPattern` and `errorPixelCols`.
+- Derive error overlay, no-JavaScript fallback, underline, and loader patterns from site configuration.
+- Add automatic pixel layout calculation with optional column overrides in PHP and JavaScript.
+- Derive loader pixel count from the configured pattern, with a minimum of three.
+- Consolidate core and module version logging into a single boot summary.
+- Update fallback site data with Pixelian branding.
+- Standardize file headers and rename `inline_json` to `inlineJson`.
 
-- `index.php` normalization accepts both string and object entries. PHP only needs the `name` field for preloads, CSS injection, and data inlining; target/position flow through the inlined `<script id="data-modules">` to JS.
+## [1.2.2] - 2026-11-15
 
-- Card `manifest.js` accepts `mount` and applies `target` / `position` overrides.
+### Removed
 
-- Card `VERSION` bumped to `1.1.0`.
+- Obsolete `VERSION` export from `core/utils.js`, superseded by `CORE_VERSION`.
 
-- Card `REQUIRES_CORE` bumped to `1.1.0`. Card v1.1.0 uses the new mount contract from base v1.1.0 - without it, the object-form entries in data/modules.json would be silently filtered, and card would not load at all. Requiring base v1.1.0 makes the failure loud (`assertRequirements` throws) instead of silent.
+### Fixed
 
-- `CORE_VERSION` bumped to `1.1.0`.
+- Incorrect `CORE_VERSION` reporting `1.2.0` instead of `1.2.1`.
 
-- `data/modules.json` sample updated to show the object form.
+## [1.2.1] - 2026-11-15
 
-### Notes
+### Added
 
-- Backward compatible: existing `{"modules": ["card"]}` string deployments work without changes.
+- Core and module version logging during application startup.
 
-- Missing `target` -> `'#module'`. Missing `position` -> `'first'`.
+## [1.2.0] - 2026-11-15
 
-- `index.php` static shell unchanged: page meta, SITE_CONFIG, and inline CSS tokens stay hardcoded. Only the module normalization block changes; everything else in `index.php` is byte-identical.
+### Added
 
-- Modules that do not need mount support continue to work without any update - `init(moduleData, mount = {})` is backward compatible.
+- `waitForLoaderGone()` utility to resolve after the loader fully fades, without a safety timeout.
+
+## [1.1.0] - 2026-11-12
+
+### Added
+
+- Data-driven module placement with configurable `target` and `position`.
+- Support for string and object entries in `data/modules.json`.
+- Optional `mount` configuration passed to module initialization.
+
+### Changed
+
+- Update PHP module normalization and JavaScript loading to support placement options.
+- Update Card module to support configurable mounting.
+- Upgrade Card and core versions to `1.1.0`.
+- Set Card's minimum required core version to `1.1.0`.
+- Preserve compatibility with existing module configurations, defaulting to `#module` and `first`.
 
 ## [1.0.0] - 2026-11-11
 
-First public release.
+### Added
 
-### Core
+- Initial public release of Pixelian.
+- Reusable Panel and Window components with dragging, resizing, minimization, maximization, closing, and position persistence.
+- Taskbar with event-driven window controls.
+- Events bus with publish/subscribe support.
+- Theme management and selector with persistent site and panel preferences.
+- ErrorDialog with multiple renderers and URL-based error routing.
+- API utility with CSRF headers, request timeouts, and structured errors.
+- HTML sanitizer with allow-list and protocol filtering.
+- Core utilities for dates, strings, DOM, loading, versioning, and seeded randomness.
+- Core and module version registry with dependency validation.
+- Dynamic module loading and configuration through `data/modules.json`.
+- Automatic module CSS, preload, and data injection through PHP.
+- Card module with configurable content from `data/card.json`.
+- Animated pixel loader and theme initialization without flashing.
+- No-JavaScript fallback card and JavaScript failure error overlay.
+- `setup.sh` for initial configuration and server requirement checks.
+- Example nginx configuration and customizable site data.
+- Repository, editor, and search engine configuration files.
+- `README.md`, `GUIDE.md`, and `CHANGELOG.md`.
 
-- Panel - reusable frame with optional header and Window wrapper.
-- Window - drag, resize, minimize, maximize, close, position persistence.
-- Taskbar - window buttons driven by the Events bus.
-- Events - pub/sub bus with unsubscribe closures.
-- Theme - site + panel theme state and selector widget with portal positioning.
-- ErrorDialog - panel / overlay / custom renderers, URL error routing.
-- Api - fetch wrapper with CSRF headers, 15s timeout, structured ApiError.
-- Sanitize - allow-list HTML sanitizer with protocol filtering.
-- Utils - dates, strings, DOM, loading, versioning, seeded random.
-- Version registry - `registerCore`, `registerModule`, `assertRequirements`, `getLoadedModules`.
+### Changed
 
-### Module system
+- Standardize source file headers with copyright, license, and author information.
+- Establish `@modified-by` attribution for changes to shipped files.
+- Define `Powered by Antranik.dev` and `Extends Antranik.dev` attribution rules.
 
-- `js/modules/index.js` - dynamic loader. Reads `data/modules.json`, imports each active module's `manifest.js`, exports `MODULE_LIST`.
-- `data/modules.json` - controls which modules load at boot. Default: `{"modules": ["card"]}`.
-- `index.php` auto-injects module CSS, modulepreload, and module data inlining based on `data/modules.json`.
+[Unreleased]: ../../compare/v2.0.0...HEAD
 
-### Modules
-
-- Card - headerless panel driven by `/data/card.json`.
-
-### Boot
-
-- Loader with pixel wave animation.
-- Theme bootstrap (no FOUC).
-- Taskbar and theme selector mount.
-- Site data bindings for header and footer.
-- URL error routing: `?error=NNN` -> ErrorDialog panel, then URL strip.
-- No-JS fallback card.
-- Fallback error overlay when `js/app.js` fails to load.
-
-### Configuration
-
-- `setup.sh` - first-run helper: PHP 8.4.27+ hard check, nginx 1.26.3+ soft check, placeholder substitution, `media/` creation.
-- `data/site.json` - brand, tagline, footer, copyright, powered-by with `Your*` placeholders.
-- `data/card.json` - card heading and body with `Your*` placeholders.
-
-### Deployment
-
-- `nginx.example.conf` - minimal reference config.
-- `.gitignore`, `.gitattributes`, `.editorconfig` - git and editor defaults.
-- `robots.txt` (staging: `Disallow: /`), `sitemap.xml`, `site.webmanifest` with `Your*` placeholders.
-
-### Documentation
-
-- `GUIDE.md` - full architectural and reference guide.
-- `README.md` - repo landing page.
-- `CHANGELOG.md` - this file.
-
-### Conventions
-
-- File headers use description prose plus `@copyright` and `@author` lines. The previous `@templateName` / `@templateVersion` / `@owner` markers were removed so file headers stay focused on authorship and licensing.
-- `@copyright` is fixed across every file: `Copyright (c) 2026 Antranik Agopian. Antranik License 1.0.` Never changes, even after modification.
-- `@author` names the file's author. Template files ship with `Antranik Agopian <hello@antranik.dev>`. New files carry the contributor's name.
-- Files modified after shipping keep the original `@copyright` and `@author` lines, and gain a `@modified-by` line per modifier.
-- Attribution tier (see LICENSE, Attribution, and GUIDE.md, Comments): `Powered by Antranik.dev` for unmodified deployments, `Extends Antranik.dev` once any shipped code file carries a `@modified-by` line.
-
-### Notes
-
-- Ships Card only. Additional modules register in `data/modules.json`.
-- Zero build step. ES modules and CSS load directly.
-- No path routing. Add your own resolver if you need deep-linking.
-- No server-side API. `core/api.js` is ready for your own `/api/*` endpoints.
+[2.0.0]: ../../compare/v1.3.0...v2.0.0
 
 [1.3.0]: ../../compare/v1.2.2...v1.3.0
 

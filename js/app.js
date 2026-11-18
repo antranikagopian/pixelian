@@ -1,65 +1,23 @@
 /**
  * Main application entry point.
  *
- * Boot contract:
- *  - The taskbar initialises first so widgets (theme selector) can mount
- *    into its widget slot.
- *  - initApp() runs in parallel with the site loader animation.
- *  - The loader hides only when BOTH init AND animation are finished.
- *  - Set `enableSiteLoader: false` in SITE_CONFIG to skip the loader.
- *  - data/site.json is checked against CORE_SITE_DATA_SCHEMA before any
- *    binding. Outdated configs fail loudly with migration steps instead
- *    of silently hiding the attribution footer (a license violation).
- *  - One boot summary prints after module inits settle: core version
- *    line, then one table row per module (version, required core, init
- *    status, error). Replaces the previous per-module console.log loop
- *    and the standalone getLoadedModules call.
- *  - URL-triggered errors (?error=NNN) show the core ErrorDialog (panel
- *    mode) after boot. The dialog and the URL strip are implemented in
- *    core/error.js (showUrlErrorDialog + stripUrlErrorParam) so this
- *    file does not carry error-dialog lifecycle state. app.js just
- *    calls showUrlErrorDialog with the boot-time code.
+ * Boot sequence:
+ *   1. Taskbar and theme widget initialize.
+ *   2. initApp() runs in parallel with the site loader animation.
+ *   3. Loader hides when both init and animation settle.
+ *   4. data/site.json is checked against CORE_SITE_DATA_SCHEMA before
+ *      any binding. Outdated configs fail with migration steps instead
+ *      of silently hiding the attribution footer.
+ *   5. One boot summary prints after module inits settle.
+ *   6. URL-triggered errors (?error=NNN) show the core ErrorDialog
+ *      after boot via showUrlErrorDialog.
  *
- * Loader hide uses Promise.allSettled, not Promise.all: a rejected
- * initApp() must never leave the loader at opacity: 1 forever. Errors
- * are logged by initApp itself; here we only care that boot has settled.
+ * Loader hide uses Promise.allSettled so a rejected initApp() cannot
+ * leave the loader visible forever.
  *
- * Data loading is tolerant. Missing data files log a warning but do not
- * fail the module. Each module guards its own data access - a well-
- * behaved module either shows its fallback content or omits its output
- * instead of crashing. This makes adding and removing modules safe:
- * forgetting to remove a REQUIRES_DATA entry when deleting a file does
- * not break boot.
- *
- * IMPORTANT: this tolerance only covers missing DATA FILES. Broken
- * IMPORT PATHS in any module still abort the whole app.js graph because
- * ES module imports are static - the browser refuses to execute the
- * parent module if any child import 404s. Broken imports show the
- * fallback overlay at z-index 9999.
- *
- * Schema check. CORE_SITE_DATA_SCHEMA (in core/config.js) declares the
- * shape this build expects from data/site.json. Any file with a lower
- * schemaVersion, or with no field at all, triggers assertSiteDataSchema
- * before any binding runs. The error uses the same fallback overlay
- * that fires when app.js fails to load, so it works even when no
- * modules have initialized yet. Migration steps are printed in the
- * dialog so the user does not need to open the CHANGELOG.
- *
- * Boot summary. One console.log for the core version, one console.table
- * for the modules. Both fire after Promise.allSettled resolves, so the
- * status column reflects actual init outcomes. The table is the single
- * place to see the loaded surface. window.getLoadedModules stays
- * available for on-demand re-inspection; it is no longer called at boot.
- *
- * Layering:
- *  - core:     primitives (Panel, Window, Taskbar, Events, Theme)
- *              + services (ErrorDialog, Api, Sanitize)
- *  - modules:  data-driven content (Card)
- *
- * The module list is imported from ./modules/index.js. The loader
- * reads data/modules.json (Pixelian default: ["card"]) and imports
- * each active module's manifest.js. Override data/modules.json to
- * add or remove modules - no code edit needed.
+ * Data loading is tolerant (missing data files warn, do not fail the
+ * module). A missing manifest is caught by js/modules/index.js and
+ * skipped; broken static imports inside a manifest abort that module.
  *
  * @copyright Copyright (c) 2026 Antranik Agopian
  * @license Pixelian License (see LICENSE)
@@ -122,10 +80,10 @@ let _appReady = false;
  *   - Lower integer: message names the schema found, the expected one,
  *     and points at CHANGELOG.md for the migration steps.
  *
- * Both paths call window.siteShowError, which is defined in the inline
- * script in index.php. It is available before app.js runs, so the
- * dialog works even if the caller has not initialized any modules yet.
- * Falls through silently if the function is somehow absent.
+ * Both paths call window.siteShowErrorRaw, which is defined in the
+ * inline script in index.php. It is available before app.js runs, so
+ * the dialog works even if no modules have initialized yet. Falls
+ * through silently if the function is somehow absent.
  *
  * @param {Object} siteData - Parsed data/site.json.
  * @throws {Error} Always, after showing the error dialog. Boot stops.
@@ -134,15 +92,15 @@ function assertSiteDataSchema(siteData) {
     const hasSchema = Number.isInteger(siteData?.schemaVersion);
     const schema = hasSchema ? siteData.schemaVersion : 0;
 
-    if (hasSchema && schema >= CORE_SITE_DATA_SCHEMA) return;
+    if (hasSchema && schema === CORE_SITE_DATA_SCHEMA) return;
 
     const container = document.querySelector('#module');
     const message = hasSchema
-        ? `data/site.json uses schema ${schema}, but Pixelian v${CORE_VERSION} expects ${CORE_SITE_DATA_SCHEMA}. See CHANGELOG.md v1.3.0 for migration steps.`
-        : `data/site.json is missing "schemaVersion". Add "schemaVersion": ${CORE_SITE_DATA_SCHEMA} and rename "poweredBy" to "attribution", "showPoweredBy" to "showAttribution". See CHANGELOG.md v1.3.0.`;
-
-    if (typeof window.siteShowError === 'function') {
-        window.siteShowError(container, 'Config', message);
+        ? `data/site.json uses schema ${schema}, but Pixelian v${CORE_VERSION} expects ${CORE_SITE_DATA_SCHEMA}. See CHANGELOG.md v2.0.0 for migration steps.`
+        : `data/site.json is missing "schemaVersion". Add "schemaVersion": 2 and migrate to the "pixelPatterns" object. See CHANGELOG.md v2.0.0.`;
+        
+    if (typeof window.siteShowErrorRaw === 'function') {
+        window.siteShowErrorRaw(container, 'Config', message);
     }
 
     throw new Error(
@@ -346,7 +304,10 @@ async function initApp() {
             .map(r => r.reason?.message || 'Unknown error')
             .join('; ');
 
-        const dialog = new ErrorDialog({ target: '#module' });
+        const dialog = new ErrorDialog({
+            target: '#module',
+            panelId: 'error-dialog-module'
+        });
         dialog.show(
             'Error',
             `Failed to load: ${failedNames.join(', ')}. ${errorMessages}`
@@ -394,15 +355,12 @@ if (window._urlErrorCode) {
    header at the top of app.js for the full boot rationale, and
    core/error.js for the strip behavior and Back-button caveat. */
 INIT_PROMISE
-    .then(() => {
+    .finally(() => {
         if (window._urlErrorCode) {
             showUrlErrorDialog(window._urlErrorCode, window._siteErrorMessages);
         }
     })
     .catch((err) => {
-        /* initApp can reject if fetchSiteData or any module's pre-init
-           throws. Surface it in the console and hide the loader so the
-           user is not stuck on a black screen. */
         console.error('[app] init failed:', err);
         document.getElementById('siteLoader')?.classList.add('hidden');
     });

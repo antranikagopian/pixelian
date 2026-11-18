@@ -12,7 +12,7 @@
  *
  * Button states:
  *   .is-open      - accent bg + border + text
- *   .is-minimized - same + 0.625rem white left stripe (site-text color)
+ *   .is-minimized - neutral bg/border/text + accent bottom stripe
  *   .is-closed    - neutral (site-text color, default border)
  *
  * z-index 100 keeps the taskbar BELOW draggable windows (2000-4999).
@@ -67,6 +67,7 @@ footer .taskbar {
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: thin;
+    padding: 4px;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s ease, visibility 0.2s ease;
@@ -130,10 +131,15 @@ footer .taskbar {
 }
 
 .taskbar-button.is-minimized {
-    background: var(--site-button-active);
-    border-color: var(--site-text);
+    background: var(--site-button-bg);
+    border-color: var(--site-button-border);
     color: var(--site-text);
-    /* box-shadow: inset 0.625rem 0 0 var(--site-text); */
+    box-shadow: inset 0 -0.1875rem 0 var(--site-accent);
+}
+
+.taskbar-button.is-minimized:hover {
+    background: var(--site-button-hover);
+    border-color: var(--site-accent);
 }
 
 .taskbar-button-icon {
@@ -201,7 +207,7 @@ footer .taskbar {
     }
 
     /* Reading order: buttons then theme, matching desktop. DOM order is
-       widgets-then-buttons (slotOrder in TaskbarManager), so the flip
+       buttons-then-widgets (slotOrder in TaskbarManager), so the flip
        has to happen via `order`. */
     #windowTaskbar .taskbar-button { order: 1; }
     #windowTaskbar #themeSelector  { order: 2; }

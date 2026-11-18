@@ -60,14 +60,61 @@ function computePixelLayout(int $len, int $override = 0): array {
     return [7, (int) ceil($len / 7)];
 }
 
+/**
+ * Normalize raw pixelPatterns input from data/site.json into a
+ * name-keyed map of { pattern, cols, rows }. Accepts two entry shapes
+ * per name:
+ *
+ *   "name": [1,0,1, ...]              raw 0/1 array, cols auto-computed
+ *   "name": { "pattern": [...],
+ *             "cols": <int> }         explicit cols override
+ *
+ * Invalid names, empty arrays, and malformed entries are skipped
+ * silently. Values are coerced to 0 or 1. Returns an empty array when
+ * input is not an array or no valid entries exist, so callers can
+ * treat absence as "no overrides".
+ *
+ * @param mixed $raw - The value of data/site.json -> pixelPatterns.
+ * @return array<string, array{pattern:int[], cols:int, rows:int}>
+ */
+function normalizePixelPatterns($raw): array {
+    if (!is_array($raw)) return [];
+
+    $normalizedPatterns = [];
+    foreach ($raw as $name => $entry) {
+        if (!is_string($name) || !preg_match('/^[a-z0-9_-]+$/i', $name)) continue;
+
+        $pattern = null;
+        $override = 0;
+        if (is_array($entry) && array_key_exists('pattern', $entry)) {
+            if (!is_array($entry['pattern'])) continue;
+            $pattern = $entry['pattern'];
+            $override = isset($entry['cols']) ? (int) $entry['cols'] : 0;
+        } elseif (is_array($entry)) {
+            $pattern = $entry;
+        }
+        if (!is_array($pattern) || count($pattern) === 0) continue;
+
+        $normalizedPattern = array_values(array_map(fn($v) => $v ? 1 : 0, $pattern));
+        [$patternCols, $patternRows] = computePixelLayout(count($normalizedPattern), $override);
+        $normalizedPatterns[$name] = [
+            'pattern' => $normalizedPattern,
+            'cols' => $patternCols,
+            'rows' => $patternRows
+        ];
+    }
+    return $normalizedPatterns;
+}
+
 /* CORE VERSION
    Read CORE_VERSION from js/core/config.js so the generator meta tag
    stays in sync without editing index.php on every release. */
 $coreConfigPath = __DIR__ . '/js/core/config.js';
 $coreVersion = '0.0.0';
 if (is_readable($coreConfigPath)) {
-    $raw = file_get_contents($coreConfigPath);
-    if (preg_match("/CORE_VERSION\s*=\s*'([^']+)'/", $raw, $m)) {
+    $raw = @file_get_contents($coreConfigPath);
+    if ($raw !== false
+        && preg_match('/CORE_VERSION\s*=\s*[\'"]([^\'"]+)[\'"]/', $raw, $m)) {
         $coreVersion = $m[1];
     }
 }
@@ -84,17 +131,27 @@ if (is_readable($coreConfigPath)) {
 $siteDataPath = __DIR__ . '/data/site.json';
 $siteData = [];
 if (is_readable($siteDataPath)) {
-    $parsed = json_decode(file_get_contents($siteDataPath), true);
+    $raw = @file_get_contents($siteDataPath);
+    $parsed = $raw !== false ? json_decode($raw, true) : null;
     if (is_array($parsed)) $siteData = $parsed;
 }
 
-$pixelPattern = is_array($siteData['pixelPattern'] ?? null) && count($siteData['pixelPattern']) > 0
-    ? array_values(array_map('intval', $siteData['pixelPattern']))
-    : [1, 1, 1, 1, 1, 1, 1];
+$pixelPatterns = normalizePixelPatterns($siteData['pixelPatterns'] ?? null);
 
-$pixelLen = count($pixelPattern);
-$pixelColsOverride = isset($siteData['pixelCols']) ? (int) $siteData['pixelCols'] : 0;
-[$pixelCols, $pixelRows] = computePixelLayout($pixelLen, $pixelColsOverride);
+/* Schema 2 requires pixelPatterns.default. Fall back to the built-in
+   so the page renders (brand underline, loader, no-JS card) even on an
+   invalid config. app.js shows the schema dialog separately. */
+if (!isset($pixelPatterns['default'])) {
+    $pixelPatterns['default'] = [
+        'pattern' => [1, 1, 1, 1, 1, 1, 1],
+        'cols' => 7,
+        'rows' => 1
+    ];
+}
+
+$pixelPattern = $pixelPatterns['default']['pattern'];
+$pixelCols = $pixelPatterns['default']['cols'];
+$pixelRows = $pixelPatterns['default']['rows'];
 
 /* MODULE CONFIG
    Active modules are read from data/modules.json (overridden per
@@ -134,9 +191,11 @@ if (is_readable($modulesPath)) {
 $activeModules = [];
 foreach ($rawModules as $entry) {
     $name = is_array($entry) ? ($entry['name'] ?? null) : $entry;
-    if (is_string($name) && preg_match('/^[a-z0-9_-]+$/i', $name)) {
-        $activeModules[] = $name;
-    }
+    if (!is_string($name) || !preg_match('/^[a-z0-9_-]+$/i', $name)) continue;
+    if (in_array($name, ['site', 'modules'], true)) continue;
+    if (in_array($name, $activeModules, true)) continue;
+
+    $activeModules[] = $name;
 }
 ?>
 <!DOCTYPE html>
@@ -183,9 +242,6 @@ foreach ($rawModules as $entry) {
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <link rel="shortcut icon" href="/icons/favicon.ico" />
-
-    <!-- FONTS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
     <!-- Module preloads. Manifests and mains preloaded so the dynamic
          import in js/modules/index.js resolves from cache. JSON is
@@ -278,8 +334,8 @@ foreach ($activeModules as $name) {
             --site-loader-pixel-gap: 0;
             --site-loader-pixel-opacity-min: 0.15;
             --site-loader-pixel-scale-min: 0.7;
-            --site-loader-pixel-appear-delay: 100;
-            --site-loader-pixel-disappear-delay: 120;
+            --site-loader-pixel-appear-delay: 100ms;
+            --site-loader-pixel-disappear-delay: 120ms;
             --site-loader-pixel-wave-duration: 0.8s;
             --site-loader-pixel-wave-stagger: 0.08s;
             --site-loader-pixel-settle-duration: 0.35s;
@@ -311,7 +367,7 @@ foreach ($activeModules as $name) {
             --site-button-hover: rgba(255, 255, 255, 0.2);
             --site-button-active: rgba(255, 255, 255, 0.3);
             --site-button-border: rgba(255, 255, 255, 0.3);
-            --site-button-focus: rgba(76, 255, 176, 0.5);
+            --site-button-focus: #4cffb0;
         }
 
         .site-light {
@@ -328,7 +384,7 @@ foreach ($activeModules as $name) {
             --site-button-hover: rgba(0, 0, 0, 0.15);
             --site-button-active: rgba(0, 0, 0, 0.2);
             --site-button-border: rgba(0, 0, 0, 0.2);
-            --site-button-focus: rgba(0, 102, 204, 0.3);
+            --site-button-focus: #0066cc;
         }
 
         /* RESET */
@@ -361,6 +417,11 @@ foreach ($activeModules as $name) {
             font-size: var(--site-font-size-base);
             padding: var(--site-gap);
             transition: background-color var(--site-transition-base);
+        }
+
+        :focus-visible {
+            outline: 2px dashed var(--site-button-focus);
+            outline-offset: 0.125rem;
         }
 
         /* HEADER */
@@ -506,11 +567,53 @@ foreach ($activeModules as $name) {
             100% { opacity: var(--site-loader-pixel-opacity-min); transform: scale(var(--site-loader-pixel-scale-min)); }
         }
 
+        /* SHARED LABEL */
+        .site-dashed-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--site-text);
+            white-space: nowrap;
+            line-height: 1;
+        }
+
+        .site-dashed-label::before,
+        .site-dashed-label::after {
+            content: "";
+            width: 2rem;
+            height: 1px;
+            background-image: linear-gradient(
+                to right,
+                rgba(var(--site-text-rgb), 0.25) 0 0.5rem,
+                transparent 0.5rem 0.75rem,
+                rgba(var(--site-text-rgb), 0.25) 0.75rem 1.25rem,
+                transparent 1.25rem 1.5rem,
+                rgba(var(--site-text-rgb), 0.25) 1.5rem 2rem
+            );
+        }
+
+        .site-dashed-divider {
+            width: 5rem;
+            height: 1px;
+            background-image: repeating-linear-gradient(
+                to right,
+                rgba(var(--site-text-rgb), 0.25) 0 0.5rem,
+                transparent 0.5rem 0.75rem
+            );
+            background-size: 0.75rem 1px;
+            background-position: bottom left;
+            background-repeat: repeat-x;
+            flex-shrink: 0;
+        }
+
         /* ERROR */
 
         /* Fallback error overlay. Only fires when js/app.js fails to load.
            URL errors use the core ErrorDialog panel via app.js instead.
-           Structure: canvas -> divider -> message, inside .core-panel so
+           Structure: divider -> canvas -> divider -> message, inside .core-panel so
            frame, shadow, radius, padding come from panel.css. */
         .site-error {
             position: fixed;
@@ -547,38 +650,16 @@ foreach ($activeModules as $name) {
             width: 10rem;
             height: 10rem;
             box-sizing: border-box;
-            border: 1px dashed rgba(var(--site-text-rgb), 0.15);
+            border: 1px solid rgba(var(--site-text-rgb), 0.15);
             border-radius: 0.125rem;
             background: rgba(15, 15, 15, 0.92);
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            margin-bottom: 0.7rem;
         }
         .site-light .site-error-canvas {
             background: rgba(255, 255, 255, 0.95);
-        }
-
-        /* Badge straddles the bottom dashed line. Solid border marks it
-           as a label (structure), not a chip (dashed). */
-        .site-error-badge {
-            position: absolute;
-            bottom: -0.7rem;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1;
-            padding: 0.125rem 0.5rem;
-            background: var(--site-bg);
-            color: var(--site-accent);
-            border: 1px solid var(--site-accent);
-            border-radius: var(--site-radius-sm, 0.25rem);
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            line-height: 1.4;
-            white-space: nowrap;
         }
 
         .site-error-grid {
@@ -602,22 +683,6 @@ foreach ($activeModules as $name) {
         @keyframes pixelErrorPulse {
             0%   { opacity: 0.4; }
             100% { opacity: 1; }
-        }
-
-        /* 5rem, 8:4 dashed gradient. Matches .site-error-divider. */
-        .site-error-divider {
-            width: 5rem;
-            height: 1px;
-            background-image: repeating-linear-gradient(
-                to right,
-                rgba(var(--site-text-rgb), 0.15) 0 0.5rem,
-                transparent 0.5rem 0.75rem
-            );
-            background-size: 0.75rem 1px;
-            background-position: bottom left;
-            background-repeat: repeat-x;
-            opacity: 0.7;
-            flex-shrink: 0;
         }
 
         .site-error-message {
@@ -692,6 +757,20 @@ foreach ($activeModules as $name) {
         /* Hidden by default. The <noscript> block below overrides to
            display: flex when JS is disabled. */
         .no-js-backdrop { display: none; }
+
+        /* Reduced motion. Stops continuous animations for users who set
+        the OS preference. State transitions still occur, just instantly. */
+        @media (prefers-reduced-motion: reduce) {
+            #siteLoader.loader-wave .site-loader-pixel,
+            .site-error-pixel.on {
+                animation: none;
+            }
+            #siteLoader,
+            .site-loader-pixel,
+            .site-error-pixel {
+                transition-duration: 0.01ms !important;
+            }
+        }
     </style>
 
     <!-- No-JS fallback. Only runs when JavaScript is disabled; the
@@ -742,7 +821,7 @@ foreach ($activeModules as $name) {
             .no-js-canvas {
                 width: 10rem;
                 height: 10rem;
-                border: 1px dashed var(--panel-border);
+                border: 1px solid var(--panel-border);
                 border-radius: 0.125rem;
                 background: rgba(15, 15, 15, 0.92);
                 display: flex;
@@ -768,22 +847,6 @@ foreach ($activeModules as $name) {
 
             .no-js-pixel-cell[data-filled] {
                 background: var(--site-fg);
-            }
-
-            /* DIVIDER */
-
-            .no-js-divider {
-                width: 5rem;
-                height: 1px;
-                background-image: repeating-linear-gradient(
-                    to right,
-                    var(--panel-border) 0 0.5rem,
-                    transparent 0.5rem 0.75rem
-                );
-                background-size: 0.75rem 1px;
-                background-position: bottom left;
-                background-repeat: repeat-x;
-                opacity: 0.7;
             }
 
             /* MESSAGE */
@@ -852,6 +915,9 @@ foreach ($activeModules as $name) {
         <div class="core-panel panel-dark no-js-card">
             <div class="core-panel-content">
 
+                <!-- TITLE -->
+                <div class="site-dashed-label" aria-hidden="true">Notice</div>
+
                 <!-- CANVAS. Cells are generated from data/site.json
                      pixelPattern by the PHP above. Changing the
                      pattern in that file updates both this card and
@@ -865,7 +931,7 @@ foreach ($activeModules as $name) {
                 </div>
 
                 <!-- DIVIDER -->
-                <div class="no-js-divider" aria-hidden="true"></div>
+                <div class="site-dashed-divider" aria-hidden="true"></div>
 
                 <!-- MESSAGE -->
                 <div class="no-js-message">
@@ -911,9 +977,10 @@ function inlineJson($path, $id) {
     if (!is_readable($path)) return;
     $raw = file_get_contents($path);
     $raw = str_replace('{year}', date('Y'), $raw);
+    $raw = str_replace('</', '<\/', $raw);
     echo '<script type="application/json" id="data-'
-       . htmlspecialchars($id, ENT_QUOTES)
-       . '">' . $raw . '</script>' . "\n";
+    . htmlspecialchars($id, ENT_QUOTES)
+    . '">' . $raw . '</script>' . "\n";
 }
 
 /* CORE DATA - always inlined */
@@ -951,11 +1018,9 @@ foreach ($activeModules as $name) {
             <!-- Panels are inserted dynamically -->
         </div>
 
-        <!-- LOADER. Covers the viewport during boot. Hidden by app.js
-             once init and animation both settle, or immediately when a
-             URL error short-circuits it. -->
-        <div id="siteLoader">
-            <div class="site-loader-pixels" id="siteLoaderPixels"></div>
+        <!-- LOADER -->
+        <div id="siteLoader" role="status" aria-label="Loading">
+            <div class="site-loader-pixels" id="siteLoaderPixels" aria-hidden="true"></div>
         </div>
     </main>
 
@@ -997,20 +1062,15 @@ foreach ($activeModules as $name) {
                 tagline: 'YourTagline',
                 enableSiteLoader: true,
 
-                /* Pixel pattern. Read from data/site.json at request
-                   time and shared by the error overlay fallback, the
-                   no-JS fallback, and every module that renders the
-                   pixel pattern (via window.__SITE_DATA__). Layout
-                   (cols) is computed server-side from the pattern
-                   length. */
-                pixelCols: <?php echo (int) $pixelCols; ?>,
-                pixelPattern: <?php echo json_encode($pixelPattern); ?>,
+                pixelPatterns: <?php echo json_encode((object) $pixelPatterns); ?>,
 
                 errorMessages: {
                     '400': 'Bad request. Please check the URL and try again.',
                     '401': 'Unauthorized. You need to log in to access this page.',
                     '403': 'Forbidden. You don\u2019t have permission to view this resource.',
                     '404': 'Page not found. The page you\u2019re looking for doesn\u2019t exist.',
+                    '413': 'Upload too large. Try a smaller file.',
+                    '429': 'Too many requests. Wait a moment and try again.',
                     '500': 'Internal server error. Something went wrong on our end.'
                 },
                 errorContainer: 'main',
@@ -1079,20 +1139,25 @@ foreach ($activeModules as $name) {
                 const windowTaskbar = document.getElementById('windowTaskbar');
                 if (windowTaskbar) windowTaskbar.remove();
 
-                const pattern = SITE_CONFIG.pixelPattern;
-                const cols = Number.isInteger(SITE_CONFIG.pixelCols) && SITE_CONFIG.pixelCols > 0
-                    ? SITE_CONFIG.pixelCols
-                    : 5;
-                const rows = Math.ceil(pattern.length / cols);
+                const errorConfig = SITE_CONFIG.pixelPatterns.error || SITE_CONFIG.pixelPatterns.default;
+                const pattern = errorConfig.pattern;
+                const cols = errorConfig.cols;
+                const rows = errorConfig.rows;
 
                 const overlay = document.createElement('div');
                 overlay.className = 'site-error';
+                overlay.setAttribute('role', 'alert');
 
                 const card = document.createElement('div');
                 card.className = 'core-panel panel-dark site-error-card';
 
                 const content = document.createElement('div');
                 content.className = 'core-panel-content';
+
+                const badgeEl = document.createElement('span');
+                badgeEl.className = 'site-dashed-label';
+                badgeEl.textContent = 'Error ' + String(code);
+                content.appendChild(badgeEl);
 
                 const canvas = document.createElement('div');
                 canvas.className = 'site-error-canvas';
@@ -1112,18 +1177,11 @@ foreach ($activeModules as $name) {
                     grid.appendChild(pixel);
                 }
                 canvas.appendChild(grid);
-
-                const badgeEl = document.createElement('span');
-                badgeEl.className = 'site-error-badge';
-                badgeEl.textContent = 'Error ' + String(code);
-                canvas.appendChild(badgeEl);
-
                 content.appendChild(canvas);
 
-                const divider = document.createElement('div');
-                divider.className = 'site-error-divider';
-                divider.setAttribute('aria-hidden', 'true');
-                content.appendChild(divider);
+                const dividerEl = document.createElement('span');
+                dividerEl.className = 'site-dashed-divider';
+                content.appendChild(dividerEl);
 
                 const msgEl = document.createElement('div');
                 msgEl.className = 'site-error-message';
@@ -1147,6 +1205,7 @@ foreach ($activeModules as $name) {
             }
 
             window.siteShowError = siteShowErrorByCode;
+            window.siteShowErrorRaw = siteShowError;
 
             /* THEME */
 

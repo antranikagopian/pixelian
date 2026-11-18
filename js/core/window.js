@@ -29,20 +29,24 @@
  *   - `_applyCenter` always writes inline width/height from the measured
  *     CSS size (or fallback if measurement fails), locking the size in
  *     so reopen never produces a collapsed window.
- *   - `_saveState` and `_onResizeViewport` bail out when the element is
- *     `display: none` (closed). Without this guard, a resize while
- *     closed would save `{width: 0, height: 0}` to localStorage, and the
- *     next open would read that broken state.
+ *   - `_saveState` and `_onResizeViewport` bail out when the window is
+ *     not visible, either closed (inline display: none) or minimized
+ *     (.is-minimized CSS class). Without this guard, a resize while
+ *     hidden would save `{width: 0, height: 0}` to localStorage and
+ *     clamp the stored position to the top-left corner, and the next
+ *     restore would read that broken state.
  *   - `_loadState` rejects saved states whose width or height is below
  *     100px, treating them as corrupted and falling through to the
  *     default centered layout.
  *
  * Listener lifecycle:
- *   Every event handler registered by this class is stored as a named
- *   instance property (`this._onHeaderDown`, `this._onHeaderDblClick`,
- *   `this._onElementMouseDown`, `this._onDocMove`, `this._onDocUp`,
- *   `this._onResizeViewport`) BEFORE being attached. This makes
- *   `destroy()` able to remove every listener it claims to remove.
+ *   Every event handler registered by this class is stored on the
+ *   instance BEFORE being attached: `this._onHeaderDown`,
+ *   `this._onHeaderDblClick`, `this._onElementMouseDown`,
+ *   `this._onDocMove`, `this._onDocUp`, `this._onResizeViewport`, and
+ *   `this._resizeHandles` (one { el, handler } entry per direction).
+ *   This makes `destroy()` able to remove every listener it claims to
+ *   remove.
  *
  *   Registering inline arrow functions would create a fresh function
  *   reference at each `addEventListener` call; `removeEventListener`
@@ -63,6 +67,7 @@
 /* IMPORTS */
 
 import { EVENTS } from './events.js';
+import { ICON_MINIMIZE, ICON_MAXIMIZE, ICON_RESTORE, ICON_CLOSE } from './icons.js';
 
 /* STATE */
 
@@ -84,10 +89,6 @@ const DEFAULT_MIN_HEIGHT = 80;
 
 /* Default tier for content panels. */
 const DEFAULT_Z_INDEX_BASE = 2000;
-
-/* Icons for the maximize / restore states. */
-const ICON_MAXIMIZE = '<i class="far fa-square"></i>';
-const ICON_RESTORE  = '<i class="fas fa-compress"></i>';
 
 /**
  * Resize handle directions. cx / cy describe the effect on the rect.
@@ -262,8 +263,14 @@ export class Window {
     /** @returns {boolean} */
     get isMaximized() { return this._isMaximized; }
 
-    /** @returns {boolean} True when element is not display:none. */
-    get isVisible() { return this.element.style.display !== 'none'; }
+    /**
+     * @returns {boolean} True when the window is neither closed (inline
+     *   display: none) nor minimized (CSS display: none via .is-minimized).
+     */
+    get isVisible() {
+        if (this._isMinimized) return false;
+        return this.element.style.display !== 'none';
+    }
 
     /** @returns {boolean} Reflects showMinimize option. */
     get canMinimize() { return this._showMinimize; }
@@ -409,36 +416,24 @@ export class Window {
     }
 
     /**
-     * Tear down the window: remove every listener, unregister from
-     * WINDOW_REGISTRY, and emit window:destroyed.
-     *
-     * Every removeEventListener call below matches a listener that was
-     * stored as an instance property in the constructor. The previous
-     * version relied on this being true for `_onHeaderDblClick` and
-     * `_onElementMouseDown` but those were registered as inline arrow
-     * functions, so their removeEventListener calls were silent no-ops.
-     * The constructor now binds both as instance properties, so all
-     * removeEventListener calls below take effect.
-     *
-     * This matters in three scenarios the template does not yet hit but
-     * will as it grows:
-     *   1. Panel reuse - destroy() then re-insert the same element. Old
-     *      handlers would fire on the reused element if they were still
-     *      attached.
-     *   2. Long-running SPA - repeated destroy/recreate cycles with
-     *      retained element references accumulate listeners.
-     *   3. External capture - any code holding a reference to the
-     *      element before destroy() keeps the leaked listeners alive.
-     *
-     * Not removing those listeners today would not cause a visible bug,
-     * because the element is detached (cannot receive user events) and
-     * GC'd with the listeners when no external reference exists. The
-     * fix makes `destroy()` truthful rather than relying on that
-     * side-effect.
+     * Tear down the window: remove every listener attached by this
+     * instance, unregister from WINDOW_REGISTRY, and emit
+     * window:destroyed. Every removeEventListener call below matches a
+     * listener that was stored as an instance property before being
+     * attached.
      */
     destroy() {
         window.removeEventListener('resize', this._onResizeViewport);
         this.header.removeEventListener('mousedown', this._onHeaderDown);
+
+        if (this._resizeHandles) {
+            for (const { el, handler } of this._resizeHandles) {
+                el.removeEventListener('mousedown', handler);
+                el.removeEventListener('touchstart', handler);
+            }
+            this._resizeHandles = null;
+        }
+
         this.header.removeEventListener('touchstart', this._onHeaderDown);
         this.header.removeEventListener('dblclick', this._onHeaderDblClick);
         this.element.removeEventListener('mousedown', this._onElementMouseDown);
@@ -470,7 +465,7 @@ export class Window {
             btnMin.className = 'core-panel-btn core-panel-btn-minimize';
             btnMin.type = 'button';
             btnMin.setAttribute('aria-label', 'Minimize');
-            btnMin.innerHTML = '<i class="fas fa-minus"></i>';
+            btnMin.innerHTML = ICON_MINIMIZE;
             btnMin.addEventListener('click', (e) => { e.stopPropagation(); this.toggleMinimize(); });
             wrap.appendChild(btnMin);
         }
@@ -490,7 +485,7 @@ export class Window {
         btnClose.className = 'core-panel-btn core-panel-btn-close';
         btnClose.type = 'button';
         btnClose.setAttribute('aria-label', 'Close');
-        btnClose.innerHTML = '<i class="fas fa-times"></i>';
+        btnClose.innerHTML = ICON_CLOSE;
         btnClose.addEventListener('click', (e) => { e.stopPropagation(); this.close(); });
         wrap.appendChild(btnClose);
 
@@ -501,11 +496,17 @@ export class Window {
 
     /* Add 8 resize handle divs (one per direction) to the element. */
     _createResizeHandles() {
+        this._resizeHandles = [];
         for (const dir of RESIZE_DIRECTIONS) {
             const handle = document.createElement('div');
             handle.className = `core-panel-resize core-panel-resize-${dir.name}`;
-            handle.addEventListener('mousedown', (e) => this._onResizeStart(e, dir));
-            handle.addEventListener('touchstart', (e) => this._onResizeStart(e, dir), { passive: false });
+            handle.setAttribute('aria-hidden', 'true');
+
+            const onDown = (e) => this._onResizeStart(e, dir);
+            handle.addEventListener('mousedown', onDown);
+            handle.addEventListener('touchstart', onDown, { passive: false });
+
+            this._resizeHandles.push({ el: handle, handler: onDown });
             this.element.appendChild(handle);
         }
     }
@@ -614,18 +615,9 @@ export class Window {
     }
 
     /**
-     * Header double-click handler - toggles maximize (or restore, if
-     * already maximized). Skipped when showMaximize is false and when
-     * the double-click lands on a control button (close, minimize,
-     * maximize) so clicking those twice quickly does not also toggle
-     * the panel state.
-     *
-     * Registered as a named instance property (`_onHeaderDblClick`)
-     * so `destroy()` can remove it via removeEventListener. Previously
-     * this was an inline arrow function, which the browser cannot
-     * match to a removeEventListener call because each registration
-     * creates a fresh function reference.
-     *
+     * Header double-click handler - toggles maximize. Skipped when
+     * showMaximize is false and when the click lands on a control
+     * button.
      * @param {MouseEvent} e
      */
     _onHeaderDblClick(e) {
@@ -637,13 +629,8 @@ export class Window {
 
     /**
      * Element mousedown handler - brings the window to the front of
-     * its tier. Fires on any mousedown inside the panel, including on
-     * buttons (which call stopPropagation in their own handlers, so
-     * this fires only for events the buttons did not consume).
-     *
-     * Registered as a named instance property (`_onElementMouseDown`)
-     * so `destroy()` can remove it. Same rationale as
-     * `_onHeaderDblClick` above.
+     * its tier. Buttons call stopPropagation in their own handlers, so
+     * this fires only for non-button events.
      */
     _onElementMouseDown() {
         this.focus();
@@ -711,17 +698,7 @@ export class Window {
     }
 
     /**
-     * Whether the viewport matches the mobile breakpoint. The result
-     * must be combined with `this._autoMaximizeMobile` before any
-     * action - this predicate is only the viewport check. Callers:
-     *   - constructor (initial auto-maximize)
-     *   - _resetToDefault (close->reopen resets to the same state)
-     * Both call sites AND the two conditions together. Splitting the
-     * viewport check from the intent check keeps the predicate pure
-     * and lets every future call site stay explicit about which
-     * mobile behavior applies.
-     *
-     * @returns {boolean}
+     * @returns {boolean} True when the viewport matches the mobile breakpoint.
      */
     _shouldAutoMaximizeOnMobile() {
         return window.matchMedia('(max-width: 768px)').matches;
@@ -806,10 +783,15 @@ export class Window {
 
     /* Handle window resize: re-clamp, or recompute mobile maximize bounds. */
     _onResizeViewport() {
+        /* Skip hidden windows. A resize while the window is closed
+           (inline display: none) or minimized (CSS display: none via
+           .is-minimized) reports offsetWidth and offsetHeight of 0,
+           so _clampRectToBounds would clamp the stored position to
+           the top-left corner and _setPosition would persist it. The
+           window jumps to (0, 0) on the next restore. */
+        if (!this.isVisible) return;
+
         if (this._isMaximized) {
-            /* Recompute mobile maximize bounds so header/footer size
-               changes (or orientation flips) don't leave the panel
-               overlapping the site chrome. */
             this._applyMaximizeBounds();
             return;
         }
@@ -879,8 +861,8 @@ export class Window {
             this._applyRect({
                 x: saved.x,
                 y: saved.y,
-                width: this.element.offsetWidth,
-                height: this.element.offsetHeight
+                width: this.element.offsetWidth || saved.width,
+                height: this.element.offsetHeight || saved.height
             });
             return;
         }

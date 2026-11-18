@@ -1,8 +1,8 @@
-Pixelian License 1.0
+Pixelian License 1.1
 
 Copyright (c) 2026 Antranik Agopian <hello@antranik.dev>
 
-SPDX-License-Identifier: LicenseRef-Pixelian-1.0
+SPDX-License-Identifier: LicenseRef-Pixelian-1.1
 
 
 PREAMBLE
@@ -90,7 +90,7 @@ with the following requirements.
        - Add a "@modified-by" line identifying the modifier.
 
      The "@modified-by" line must follow the format documented in
-     GUIDE.md section 3.3.
+     docs/standards.md.
 
      Additional modifiers may add their own "@modified-by" lines
      without removing previous entries.
@@ -436,25 +436,15 @@ LAW.
 
 8. THIRD-PARTY COMPONENTS
 
-The Software loads Font Awesome 6.5.0 (Free) via CDN.
+Pixelian 1.1 ships with no third-party runtime components. Every
+shipped asset is part of the Software and governed by this license.
 
-Font Awesome components are licensed separately under their applicable
-licenses, including:
+If a future version incorporates third-party components, they remain
+governed by their respective licenses unless expressly stated
+otherwise. Their copyright notices and attribution requirements
+remain in effect.
 
-  - SIL Open Font License 1.1
-  - MIT License
-  - Creative Commons Attribution 4.0
-
-These components are not covered by the Pixelian License.
-
-Their original licenses, copyright notices, and applicable attribution
-requirements remain in effect.
-
-See GUIDE.md section 11 for additional information.
-
-Other third-party dependencies incorporated into future versions of
-Pixelian remain governed by their respective licenses unless expressly
-stated otherwise.
+See docs/licenses.md for any dependencies added by downstream projects.
 
 
 9. DEFINITIONS

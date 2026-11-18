@@ -154,7 +154,7 @@ export function shuffle(arr) {
  */
 export function computePixelLayout(pattern, overrideCols) {
     const len = Array.isArray(pattern) ? pattern.length : 0;
-    if (len === 0) return { cols: 7, rows: 1 };
+    if (len === 0) return { cols: 0, rows: 1 };
 
     if (Number.isInteger(overrideCols) && overrideCols > 0) {
         return { cols: overrideCols, rows: Math.max(1, Math.ceil(len / overrideCols)) };
@@ -165,6 +165,45 @@ export function computePixelLayout(pattern, overrideCols) {
     if (len > 7 && len % 7 === 0) return { cols: 7, rows: len / 7 };
     if (len <= 7) return { cols: len, rows: 1 };
     return { cols: 7, rows: Math.ceil(len / 7) };
+}
+
+/**
+ * Resolve the site pixel pattern and optional cols override from
+ * window.__SITE_DATA__. Reads the v2.0.0 shape
+ * (pixelPatterns.default) first, then the v1.x fallback
+ * (pixelPattern) for deployments mid-migration. Falls back to a
+ * single row when no valid pattern is present, so callers can
+ * render unconditionally.
+ *
+ * @param {number[]} [fallback=[1,1,1,1,1,1,1]] - Pattern to return
+ *   when no valid pattern is set in site data.
+ * @returns {{ pattern: number[], cols?: number }}
+ */
+export function resolveSitePixelPattern(fallback = [1, 1, 1, 1, 1, 1, 1]) {
+    const siteData = window.__SITE_DATA__;
+    const defaultEntry = siteData?.pixelPatterns?.default;
+
+    if (defaultEntry) {
+        const pattern = Array.isArray(defaultEntry)
+            ? defaultEntry
+            : defaultEntry.pattern;
+        const cols = !Array.isArray(defaultEntry) && Number.isInteger(defaultEntry.cols)
+            ? defaultEntry.cols
+            : undefined;
+        if (Array.isArray(pattern) && pattern.length > 0) {
+            return { pattern, cols };
+        }
+    }
+
+    const legacy = siteData?.pixelPattern;
+    if (Array.isArray(legacy) && legacy.length > 0) {
+        const cols = Number.isInteger(siteData?.pixelCols)
+            ? siteData.pixelCols
+            : undefined;
+        return { pattern: legacy, cols };
+    }
+
+    return { pattern: fallback };
 }
 
 /* STRINGS */
@@ -211,7 +250,7 @@ export function escapeAttr(text) {
  * @returns {string}
  */
 export function formatMessage(templates, key, vars = {}, fallback = {}) {
-    const template = templates?.[key] ?? fallback?.[key] ?? '';
+    const template = String(templates?.[key] ?? fallback?.[key] ?? '');
     return template.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
 }
 
@@ -224,8 +263,10 @@ export function formatMessage(templates, key, vars = {}, fallback = {}) {
  */
 export function truncate(text, maxLength, suffix = '…') {
     const s = String(text ?? '');
+    if (maxLength <= 0) return '';
     if (s.length <= maxLength) return s;
-    return s.slice(0, Math.max(0, maxLength - suffix.length)) + suffix;
+    if (suffix.length >= maxLength) return suffix.slice(0, maxLength);
+    return s.slice(0, maxLength - suffix.length) + suffix;
 }
 
 /**
@@ -617,23 +658,31 @@ export async function copyToClipboard(text) {
 /* SECURITY */
 
 /**
- * Read the CSRF token from <meta name="csrf-token"> or the XSRF-TOKEN
- * cookie.
- * @returns {string}
+ * Read the raw CSRF token from <meta name="csrf-token">. This is the
+ * value to send as `X-CSRF-TOKEN` (Laravel compares it directly to the
+ * session token).
+ *
+ * @returns {string} Token, or '' when the meta tag is absent/empty.
  */
 export function getCsrfToken() {
     const meta = document.querySelector('meta[name="csrf-token"]');
-    if (meta) {
-        const v = meta.getAttribute('content');
-        if (v) return v;
-    }
+    if (!meta) return '';
+    return meta.getAttribute('content') || '';
+}
+
+/**
+ * Read the encrypted CSRF cookie value. This is the value to send as
+ * `X-XSRF-TOKEN` (Laravel decrypts it before comparing). The cookie is
+ * base64 and may end in '=' padding, so the raw slice must be preserved.
+ *
+ * @returns {string} Cookie value, or '' when absent.
+ */
+export function getXsrfCookieToken() {
     const match = document.cookie
         .split('; ')
         .find(row => row.startsWith('XSRF-TOKEN='));
-    if (match) {
-        return decodeURIComponent(match.split('=')[1]);
-    }
-    return '';
+    if (!match) return '';
+    return decodeURIComponent(match.slice('XSRF-TOKEN='.length));
 }
 
 /* LOADING */
@@ -720,7 +769,8 @@ export function waitForLoaderGone() {
  * @returns {string} Inline ID without the 'data-' prefix.
  */
 export function urlToInlineId(url) {
-    return url
+    const clean = String(url).split(/[?#]/)[0];
+    return clean
         .replace(/^\/data\//, '')
         .replace(/\.json$/, '')
         .split('/')
@@ -789,7 +839,8 @@ export async function fetchSiteData() {
     if (data) return data;
 
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
+        pixelPatterns: { default: [1, 1, 1, 1, 1, 1, 1] },
         title: 'Pixelian',
         tagline: 'The family of pixels',
         showBrand: true,
@@ -828,10 +879,11 @@ export function mergeModuleData(raw, moduleName) {
 
     for (const [url, data] of Object.entries(raw || {})) {
         if (!data) continue;
-        if (url === flatUrl) {
+        const clean = String(url).split(/[?#]/)[0];
+        if (clean === flatUrl) {
             Object.assign(merged, data);
-        } else if (url.startsWith(prefix)) {
-            const key = url.slice(prefix.length).replace(/\.json$/, '');
+        } else if (clean.startsWith(prefix)) {
+            const key = clean.slice(prefix.length).replace(/\.json$/, '');
             merged[key] = data;
         }
     }

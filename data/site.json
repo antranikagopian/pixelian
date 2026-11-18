@@ -1,6 +1,9 @@
 {
-    "schemaVersion": 1,
-    "pixelPattern": [1,1,1,1,1,1,1],
+    "schemaVersion": 2,
+    "pixelPatterns": {
+        "default": [1,1,1,1,1,1,1],
+        "error": [1,0,1,0,1,0,1,0,1]
+    },
     "title": "YourProject",
     "tagline": "YourTagline",
     "showBrand": true,

@@ -14,8 +14,10 @@
  * render untrusted strings into DOM must sanitize client-side as well -
  * use sanitizeHTML() from core/sanitize.js for any HTML body.
  *
- * Base URL is /api/. All errors return bare status codes (nginx config
- * ensures no 302 to HTML), so fetch can always parse the response.
+ * Base URL is /api/. Assumes the deployment's nginx config returns
+ * bare status codes for API errors (no 302 redirect to HTML). If a
+ * proxy in front of Laravel does return HTML, isHTMLContent() below
+ * catches it and statusMessage() provides a clean fallback.
  *
  * @copyright Copyright (c) 2026 Antranik Agopian
  * @license Pixelian License (see LICENSE)
@@ -24,7 +26,7 @@
 
 /* IMPORTS */
 
-import { getCsrfToken } from './utils.js';
+import { getCsrfToken, getXsrfCookieToken } from './utils.js';
 
 /* CONSTANTS */
 
@@ -37,8 +39,9 @@ const TIMEOUT_MS = 15000;
  * Structured error thrown by every api call on non-2xx or network
  * failure. `status` is the real HTTP status (0 for network or timeout
  * failures). `body` is the parsed response body when available.
- * `message` is always safe to display - HTML bodies are never surfaced
- * there.
+ * `message` is safe for textContent. HTML is stripped from raw text
+ * bodies; JSON "message"/"error" fields pass through verbatim, so any
+ * caller rendering via innerHTML must still sanitize.
  */
 export class ApiError extends Error {
     /**
@@ -65,7 +68,7 @@ export class ApiError extends Error {
  * @returns {boolean} True when the value starts with an HTML tag.
  */
 function isHTMLContent(text) {
-    return typeof text === 'string' && /^\s*<(?:!doctype|html|body|head)/i.test(text);
+    return typeof text === 'string' && /^\s*</.test(text);
 }
 
 /**
@@ -118,10 +121,13 @@ async function request(method, path, body, options = {}) {
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
     };
-    const csrf = getCsrfToken();
-    if (csrf) {
-        headers['X-CSRF-TOKEN'] = csrf;
-        headers['X-XSRF-TOKEN'] = csrf;
+
+    const rawCsrf = getCsrfToken();
+    if (rawCsrf) {
+        headers['X-CSRF-TOKEN'] = rawCsrf;
+    } else {
+        const cookieCsrf = getXsrfCookieToken();
+        if (cookieCsrf) headers['X-XSRF-TOKEN'] = cookieCsrf;
     }
 
     let payload;

@@ -51,9 +51,9 @@ export class TaskbarManager {
     /**
      * @param {Object} [options]
      * @param {string|HTMLElement} [options.target='.taskbar'] - Mount target.
-     * @param {string[]} [options.slotOrder=['widgets','buttons']] - Slot order.
+     * @param {string[]} [options.slotOrder=['buttons', 'widgets']] - Slot order.
      */
-    constructor({ target = '.taskbar', slotOrder = ['widgets', 'buttons'] } = {}) {
+    constructor({ target = '.taskbar', slotOrder = ['buttons', 'widgets'] } = {}) {
         assertDependencies();
 
         /** @type {Map<string, HTMLButtonElement>} */
@@ -62,7 +62,7 @@ export class TaskbarManager {
         this.container = document.createElement('div');
         this.container.id = 'windowTaskbar';
         this.container.className = 'taskbar-container';
-        this.container.setAttribute('role', 'toolbar');
+        this.container.setAttribute('role', 'group');
         this.container.setAttribute('aria-label', 'Windows and widgets');
 
         this.widgetSlot = document.createElement('div');
@@ -141,6 +141,14 @@ export class TaskbarManager {
             this._removeButton(info.id);
             this._updateVisibility();
         });
+
+        EVENTS.on('window:renamed', (info) => {
+            const btn = this._buttons.get(info.id);
+            if (btn) {
+                const label = btn.querySelector('.taskbar-button-label');
+                if (label) label.textContent = info.label;
+            }
+        });
     }
 
     /* Build and append a taskbar button for a window. */
@@ -151,10 +159,11 @@ export class TaskbarManager {
         btn.type = 'button';
         btn.className = 'taskbar-button is-open';
         btn.dataset.windowId = info.id;
-        btn.setAttribute('aria-label', `${info.label} - open`);
+        btn.setAttribute('aria-pressed', 'true');
 
         const icon = document.createElement('span');
         icon.className = 'taskbar-button-icon';
+        icon.setAttribute('aria-hidden', 'true');
         icon.textContent = info.icon || '■';
 
         const label = document.createElement('span');
@@ -184,12 +193,7 @@ export class TaskbarManager {
         if (!btn) return;
         btn.classList.remove('is-minimized', 'is-open', 'is-closed');
         btn.classList.add(`is-${state}`);
-        const label = btn.querySelector('.taskbar-button-label')?.textContent || id;
-        const suffix =
-            state === 'minimized' ? 'minimized - click to restore' :
-            state === 'open' ? 'open - click to minimize' :
-            'closed - click to reopen';
-        btn.setAttribute('aria-label', `${label} - ${suffix}`);
+        btn.setAttribute('aria-pressed', state === 'open' ? 'true' : 'false');
     }
 
     /**
